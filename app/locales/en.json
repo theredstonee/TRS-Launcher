@@ -3544,7 +3544,8 @@
   },
   "game": {
     "preparing": "Preparing Minecraft",
-    "crashed": "The game closed unexpectedly – the logs usually show the cause."
+    "crashed": "The game closed unexpectedly – the logs usually show the cause.",
+    "packHealed": "{mods} did not work with this Minecraft version and was switched off. The game is starting again."
   },
   "settingsSections": {
     "groups": {

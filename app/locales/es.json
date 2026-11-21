@@ -3544,7 +3544,8 @@
   },
   "game": {
     "preparing": "Preparando Minecraft",
-    "crashed": "El juego se cerró inesperadamente: los registros suelen mostrar la causa."
+    "crashed": "El juego se cerró inesperadamente: los registros suelen mostrar la causa.",
+    "packHealed": "{mods} no funcionaba con esta versión de Minecraft y se ha desactivado. El juego se inicia de nuevo."
   },
   "settingsSections": {
     "groups": {

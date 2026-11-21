@@ -701,6 +701,8 @@ export interface CrashAnalysis {
   playSeconds: number | null
   /** Log-Quellen (`crash-reports/…`, `live`, `logs/latest.log`). */
   sources: string[]
+  /** Vom Launcher installierte Performance-Mods, die deshalb abgeschaltet wurden (Namen). */
+  healed?: string[]
   /** Nach Wichtigkeit, der erste ist die Hauptursache; nie leer. */
   findings: CrashFinding[]
   mods: CrashModRef[]

@@ -3441,7 +3441,8 @@
   },
   "game": {
     "preparing": "Préparation de Minecraft",
-    "crashed": "Le jeu s'est fermé de manière inattendue – les journaux indiquent généralement la cause."
+    "crashed": "Le jeu s'est fermé de manière inattendue – les journaux indiquent généralement la cause.",
+    "packHealed": "{mods} ne fonctionnait pas avec cette version de Minecraft et a été désactivé. Le jeu redémarre."
   },
   "settingsSections": {
     "groups": {

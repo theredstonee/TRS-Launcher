@@ -268,6 +268,13 @@ pub(crate) fn fps_boost_projects() -> Vec<&'static str> {
     FPS_BOOST.iter().filter(|g| g.kind == ContentKind::Mod).flat_map(|g| g.mods.iter().map(|m| m.id)).collect()
 }
 
+/// Mods, die der Launcher selbst auswählt und nach einem eindeutigen Absturz abschalten darf.
+pub(crate) fn auto_heal_projects() -> Vec<&'static str> {
+    let mut out = fps_boost_projects();
+    out.extend([IRIS_ID, NVIDIUM_ID]);
+    out
+}
+
 /// Iris lädt Shaderpakete (Fabric, Quilt, NeoForge) – zusammen mit Sodium.
 /// Nvidium ersetzt den Gelände-Renderer und verträgt sich nicht mit Shadern.
 const IRIS: Group = Group {
@@ -1329,6 +1336,8 @@ pub(crate) struct Target {
     /// Installierte Mods nie gegen andere Versionen tauschen (nur ergänzen) –
     /// beim Nachladen fehlender Abhängigkeiten vor dem Start.
     pub keep_existing: bool,
+    /// Projekte, die hier bewusst nicht installiert werden (siehe `pack_heal`).
+    pub skip: HashSet<String>,
 }
 
 impl Target {
@@ -1346,6 +1355,7 @@ impl Target {
             builtins: modcompat::loader_builtins(instance),
             bundled: HashSet::new(),
             keep_existing: false,
+            skip: HashSet::new(),
         }
     }
 
@@ -1831,7 +1841,8 @@ async fn resolve_one<L: VersionLookup>(
     }
 
     let mut last = outcome(ItemStatus::NotAvailable, None);
-    for candidate in wanted.candidates.iter().filter(|c| !c.from_1_20 || at_least_1_20(&target.game_version)) {
+    let usable = |c: &&Candidate| (!c.from_1_20 || at_least_1_20(&target.game_version)) && !(wanted.optional && target.skip.contains(&c.project_id));
+    for candidate in wanted.candidates.iter().filter(usable) {
         let versions = lookup.versions(&candidate.project_id, wanted.kind).await?;
         let Some(root) = modrinth::newest_in_channel(versions, target.channel) else { continue };
         let version_number = Some(root.version_number.clone()).filter(|v| !v.is_empty());
@@ -2037,6 +2048,22 @@ fn apply_swaps(plan: &mut Plan, entries: Vec<modcompat::Entry>, origins: Vec<Ori
     }
 }
 
+/// Sodium/Embeddium bleibt in der neuesten Version, außer Iris braucht eine ältere: Ältere
+/// Renderer laufen oft nicht mit dem neuesten Loader-Build (NeoForge 26.3 + Sodium 0.9.2).
+/// Verträgt sich eine Zusatz-Mod wie More Culling nicht damit, fällt sie heraus.
+fn keep_renderer_newest(entries: &mut [modcompat::Entry], existing: &Existing, plan: &Plan) {
+    let iris = existing.projects.contains_key(IRIS_ID) || plan.steps.iter().any(|s| s.version.project_id == IRIS_ID);
+    if iris {
+        return;
+    }
+    let renderers: Vec<&str> = FPS_BOOST[0].mods.iter().map(|m| m.id).collect();
+    for entry in entries.iter_mut().filter(|e| e.installed.is_none()) {
+        if entry.project_id.as_deref().is_some_and(|p| renderers.contains(&p)) {
+            entry.adjustable = false;
+        }
+    }
+}
+
 /// Prüft `depends`/`breaks` der Jars gegeneinander und gegen die Instanz.
 /// Konflikte werden mit einer anderen Version gelöst (siehe [`modcompat::settle`]);
 /// geht das nicht, fällt der spätere Eintrag als `incompatible` heraus –
@@ -2056,6 +2083,7 @@ async fn harmonize<L: VersionLookup>(
         if entries.is_empty() {
             return Ok(());
         }
+        keep_renderer_newest(&mut entries, existing, plan);
         let unresolved = modcompat::settle(lookup, target.channel, &mut entries, &target.builtins, None).await?;
         if let Some((item, other)) = droppable(&unresolved, &origins, plan) {
             tracing::info!("Preset-Eintrag {} fällt heraus – verträgt sich nicht mit {other}", plan.items[item].title);
@@ -2207,7 +2235,8 @@ async fn run_with(
     existing.mods = modcompat::installed_entries(paths, &instance.id).await?;
     // Was der TRS Client hier schon eingebaut mitbringt, lädt das Preset nicht noch einmal.
     let bundled = client_mod::builtin_mods(paths, builds, instance).await;
-    let target = Target { keep_existing, ..Target::of(instance).with_bundled(&bundled) };
+    let skip = crate::pack_heal::skipped(paths, &instance.id, &instance.game_version, instance.loader.kind).await;
+    let target = Target { keep_existing, skip, ..Target::of(instance).with_bundled(&bundled) };
     let lookup = ModrinthLookup::new(http, paths, instance);
     let resolve_progress = |done, total| progress(ApplyProgress { phase: ApplyPhase::Resolve, done, total, title: None });
     let plan = resolve(&lookup, &target, &existing, wanted, &resolve_progress).await?;
@@ -2689,6 +2718,22 @@ mod tests {
         assert_eq!(plan.items[1].compat_with, None);
     }
 
+    /// Wie NeoForge 26.3 am 21.11.: Sodium 0.9.3 bricht More Culling < 1.9.2, die gibt es nur als Beta.
+    #[tokio::test]
+    async fn sodium_stays_newest_and_an_addon_gives_way() {
+        let mock = Mock::default()
+            .with(version("s93", "AANobbMI", &[]))
+            .with(version("s92", "AANobbMI", &[]))
+            .with(version("mc191", "51shyZVL", &[]))
+            .jar("s93", r#"{"id":"sodium","name":"Sodium","version":"0.9.3","breaks":{"moreculling":"<1.9.2"}}"#)
+            .jar("s92", r#"{"id":"sodium","name":"Sodium","version":"0.9.2"}"#)
+            .jar("mc191", r#"{"id":"moreculling","name":"More Culling","version":"1.9.1"}"#);
+        let wanted = [want("boost", &["AANobbMI"]), want("boost", &["51shyZVL"])];
+        let plan = plan_for(&mock, &target("26.3"), &Existing::default(), &wanted).await;
+        assert_eq!(statuses(&plan), [ItemStatus::Installed, ItemStatus::Incompatible]);
+        assert_eq!(step_ids(&plan), ["s93"]);
+    }
+
     #[tokio::test]
     async fn broken_instance_is_repaired_when_the_preset_is_applied_again() {
         let mock = sodium_iris_mock();
@@ -2882,6 +2927,7 @@ mod tests {
             builtins: Vec::new(),
             bundled: HashSet::new(),
             keep_existing: false,
+            skip: HashSet::new(),
         }
     }
 

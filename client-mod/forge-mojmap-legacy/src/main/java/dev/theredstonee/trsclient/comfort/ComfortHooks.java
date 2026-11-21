@@ -68,7 +68,8 @@ public final class ComfortHooks {
 
 	public static void init(TrsModules m) {
 		modules = m;
-		Comfort.install(m, Mc.mc().gameDirectory.toPath(), panoramaSupported());
+		// Beim Erzeugen der Mod gibt es Minecraft noch nicht (NeoForge 1.21.11) - Spielordner vom Loader.
+		Comfort.install(m, net.minecraftforge.fml.loading.FMLPaths.GAMEDIR.get(), panoramaSupported());
 		// „Als Link teilen“ für Panoramen: Link landet in der Zwischenablage der Version.
 		dev.theredstonee.trsclient.core.panorama.Panorama.setClipboard(Mc::setClipboard);
 	}

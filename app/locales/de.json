@@ -3544,7 +3544,8 @@
   },
   "game": {
     "preparing": "Minecraft wird vorbereitet",
-    "crashed": "Das Spiel wurde unerwartet beendet – die Logs zeigen meist die Ursache."
+    "crashed": "Das Spiel wurde unerwartet beendet – die Logs zeigen meist die Ursache.",
+    "packHealed": "{mods} passte nicht zu dieser Minecraft-Version und wurde ausgeschaltet. Das Spiel startet neu."
   },
   "settingsSections": {
     "groups": {

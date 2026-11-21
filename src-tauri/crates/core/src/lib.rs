@@ -54,6 +54,7 @@ pub mod modpack;
 pub mod mobile_update;
 pub mod modpack_export;
 pub mod net;
+pub mod pack_heal;
 pub mod pack_share;
 pub mod modrinth;
 pub mod news;

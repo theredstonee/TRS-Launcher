@@ -3441,7 +3441,8 @@
   },
   "game": {
     "preparing": "Minecraft hazırlanıyor",
-    "crashed": "Oyun beklenmedik şekilde kapandı – nedeni genellikle günlüklerde görünür."
+    "crashed": "Oyun beklenmedik şekilde kapandı – nedeni genellikle günlüklerde görünür.",
+    "packHealed": "{mods} bu Minecraft sürümüyle çalışmadı ve kapatıldı. Oyun yeniden başlıyor."
   },
   "settingsSections": {
     "groups": {

@@ -102,6 +102,16 @@ export const useGamesStore = defineStore('games', () => {
       useInstancesStore().load()
     }
   }
+  /** Automatische Neustarts nach abgeschalteter Paket-Mod: höchstens 3 in 10 Minuten je Instanz. */
+  const healRestarts = new Map<string, number[]>()
+  function allowHealRestart(id: string): boolean {
+    const now = Date.now()
+    const recent = (healRestarts.get(id) ?? []).filter((at) => now - at < 10 * 60_000)
+    if (recent.length >= 3) return false
+    healRestarts.set(id, [...recent, now])
+    return true
+  }
+
   /** Konto, mit dem der gerade angeforderte weitere Prozess startet – das `started`-Event trägt es nicht. */
   const pendingExtraAccount = new Map<string, string | null>()
 
@@ -114,7 +124,16 @@ export const useGamesStore = defineStore('games', () => {
     // Absturz-Helfer fertig: Dialog öffnet sich.
     // Während „Schuldige Mod finden“ wertet die Suche den Absturz selbst – der Dialog bleibt zu.
     if (event.type === 'crashAnalyzed') {
-      useCrashHelperStore().received(event.crash, !useBisectStore().isActive(event.crash.instanceId))
+      const crash = event.crash
+      const bisecting = useBisectStore().isActive(crash.instanceId)
+      // Eine Performance-Mod des Launchers war schuld und ist schon aus: gleich neu starten.
+      if (crash.healed?.length && !bisecting && allowHealRestart(crash.instanceId)) {
+        useCrashHelperStore().received(crash, false)
+        useToasts().ok(t('game.packHealed', { mods: crash.healed.join(', ') }))
+        void launch(crash.instanceId)
+        return
+      }
+      useCrashHelperStore().received(crash, !bisecting)
       return
     }
     if (isExtraKey(event.instanceId, event.key)) {

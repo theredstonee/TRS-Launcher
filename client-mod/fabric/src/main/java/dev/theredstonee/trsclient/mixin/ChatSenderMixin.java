@@ -28,12 +28,21 @@ public abstract class ChatSenderMixin {
 	@Inject(method = "showMessageToPlayer", require = 1,
 			at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/components/ChatComponent;addMessage(Lnet/minecraft/network/chat/Component;Lnet/minecraft/network/chat/MessageSignature;Lnet/minecraft/client/GuiMessageTag;)V"))
 	//?}
+	//? if >=1.19.3 {
 	private void trsclient$sender(net.minecraft.network.chat.ChatType.Bound bound,
 			net.minecraft.network.chat.PlayerChatMessage message, net.minecraft.network.chat.Component text,
 			com.mojang.authlib.GameProfile profile, boolean filtered, java.time.Instant time,
 			CallbackInfoReturnable<Boolean> cir) {
 		ChatHeadHooks.arm(message, profile);
 	}
+	//?} else {
+	/*private void trsclient$sender(net.minecraft.network.chat.ChatType.Bound bound,
+			net.minecraft.network.chat.PlayerChatMessage message, net.minecraft.network.chat.Component text,
+			net.minecraft.client.multiplayer.PlayerInfo info, boolean filtered, java.time.Instant time,
+			CallbackInfoReturnable<Boolean> cir) {
+		ChatHeadHooks.arm(message, info == null ? null : info.getProfile());
+	}
+	*///?}
 }
 //?} else {
 /*public abstract class ChatSenderMixin {

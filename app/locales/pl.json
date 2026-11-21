@@ -3441,7 +3441,8 @@
   },
   "game": {
     "preparing": "Przygotowywanie Minecrafta",
-    "crashed": "Gra zamknęła się nieoczekiwanie – logi zwykle pokazują przyczynę."
+    "crashed": "Gra zamknęła się nieoczekiwanie – logi zwykle pokazują przyczynę.",
+    "packHealed": "{mods} nie działał z tą wersją Minecrafta i został wyłączony. Gra uruchamia się ponownie."
   },
   "settingsSections": {
     "groups": {

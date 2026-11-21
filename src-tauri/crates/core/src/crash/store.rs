@@ -135,6 +135,11 @@ pub(crate) async fn installed_mods(paths: &Paths, instance_id: &str) -> Vec<Inst
     .await
 }
 
+/// Wie [`installed_mods`], für Werkzeuge außerhalb des Kerns.
+pub async fn installed_mod_list(paths: &Paths, instance_id: &str) -> Vec<InstalledMod> {
+    installed_mods(paths, instance_id).await
+}
+
 // --- Log und Crash-Report ---------------------------------------------------------
 
 fn read_tail(path: &Path, max: u64) -> Option<String> {
@@ -178,7 +183,7 @@ fn log_from_disk(paths: &Paths, instance_id: &str) -> Option<(String, String)> {
 }
 
 /// Analysiert Log + Crash-Report mit dem Wissen über die Instanz.
-async fn analyze_instance(paths: &Paths, instance_id: &str, log: &str, report: Option<&str>) -> Result<super::Analysis> {
+async fn analyze_instance(paths: &Paths, instance_id: &str, log: &str, report: Option<&str>) -> Result<(super::Analysis, Vec<InstalledMod>)> {
     let instance = InstanceStore::new(paths.clone()).get(instance_id).await?;
     let settings = Settings::load(&paths.settings_file()).await.unwrap_or_default();
     let installed = installed_mods(paths, &instance.id).await;
@@ -191,7 +196,8 @@ async fn analyze_instance(paths: &Paths, instance_id: &str, log: &str, report: O
         custom_java: instance.overrides.java_path.is_some(),
         game_version: Some(&instance.game_version),
     };
-    Ok(analyze(&input))
+    let analysis = analyze(&input);
+    Ok((analysis, installed))
 }
 
 async fn save(paths: &Paths, crash: &CrashAnalysis) -> Result<()> {
@@ -234,7 +240,8 @@ pub fn analyze_after_exit(paths: &Paths, sink: EventSink, instance_id: &str, ctx
         if let Some((id, _)) = &report {
             sources.insert(0, id.clone());
         }
-        let analysis = match analyze_instance(&paths, &instance_id, &log, report.as_ref().map(|(_, t)| t.as_str())).await {
+        let report_text = report.as_ref().map(|(_, t)| t.as_str());
+        let (analysis, installed) = match analyze_instance(&paths, &instance_id, &log, report_text).await {
             Ok(a) => a,
             Err(e) => {
                 tracing::warn!("Absturz von '{instance_id}' konnte nicht analysiert werden: {e}");
@@ -249,6 +256,7 @@ pub fn analyze_after_exit(paths: &Paths, sink: EventSink, instance_id: &str, ctx
             exit_code: ctx.exit_code,
             play_seconds: Some(ctx.play_seconds),
             sources,
+            healed: crate::pack_heal::heal(&paths, &instance_id, &super::mixin_culprits(&log, report_text, &installed)).await,
             analysis,
         };
         if let Err(e) = save(&paths, &crash).await {
@@ -308,7 +316,7 @@ impl Launcher {
         let text = logfiles::read_source(self.paths(), &instance.id, source).await?.text;
         let is_report = source.starts_with("crash-reports/");
         let (log, report) = if is_report { ("", Some(text.as_str())) } else { (text.as_str(), None) };
-        let analysis = analyze_instance(self.paths(), &instance.id, log, report).await?;
+        let (analysis, _) = analyze_instance(self.paths(), &instance.id, log, report).await?;
         Ok(CrashAnalysis {
             id: CrashContext::new_id(Utc::now()),
             instance_id: instance.id,
@@ -316,6 +324,7 @@ impl Launcher {
             exit_code: None,
             play_seconds: None,
             sources: vec![source.to_owned()],
+            healed: Vec::new(),
             analysis,
         })
     }

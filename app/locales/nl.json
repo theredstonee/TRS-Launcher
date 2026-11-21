@@ -3441,7 +3441,8 @@
   },
   "game": {
     "preparing": "Minecraft voorbereiden",
-    "crashed": "Het spel is onverwacht gesloten – de logs tonen meestal de oorzaak."
+    "crashed": "Het spel is onverwacht gesloten – de logs tonen meestal de oorzaak.",
+    "packHealed": "{mods} werkte niet met deze Minecraft-versie en is uitgeschakeld. Het spel start opnieuw."
   },
   "settingsSections": {
     "groups": {

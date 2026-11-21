@@ -13,6 +13,7 @@
 //! * [`store`]: Launcher-Anbindung – Mods der Instanz einlesen, Crash-Report
 //!   finden, Ergebnis speichern (`instances/<id>/crashes/`), Behebungen.
 
+mod culprit;
 mod parse;
 mod rules;
 mod store;
@@ -23,7 +24,8 @@ use std::collections::BTreeMap;
 
 use serde::{Deserialize, Serialize};
 
-pub use store::{CrashContext, CrashSummary, analyze_after_exit, validate_crash_id};
+pub use culprit::mixin_culprits;
+pub use store::{CrashContext, CrashSummary, analyze_after_exit, installed_mod_list, validate_crash_id};
 
 /// Art eines Befunds. Reihenfolge = grobe Wichtigkeit (siehe `score`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
@@ -261,6 +263,9 @@ pub struct CrashAnalysis {
     /// Woraus analysiert wurde (Log-Quelle wie im Logs-Tab, z. B. `crash-reports/…`).
     #[serde(default)]
     pub sources: Vec<String>,
+    /// Vom Launcher installierte Performance-Mods, die deshalb gleich abgeschaltet wurden (Namen).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub healed: Vec<String>,
     #[serde(flatten)]
     pub analysis: Analysis,
 }

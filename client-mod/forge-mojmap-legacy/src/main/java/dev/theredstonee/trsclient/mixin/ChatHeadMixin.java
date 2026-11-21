@@ -87,6 +87,16 @@ public abstract class ChatHeadMixin {
 			CallbackInfo ci) {
 		ChatHeadHooks.clearFrame();
 	}
+	*///?} elif >=1.19.3 && <1.20 {
+	/*@Inject(method = "render(Lcom/mojang/blaze3d/vertex/PoseStack;III)V", at = @At("HEAD"), require = 1)
+	private void trsclient$frame(com.mojang.blaze3d.vertex.PoseStack pose, int ticks, int mouseX, int mouseY, CallbackInfo ci) {
+		ChatHeadHooks.frame(pose);
+	}
+
+	@Inject(method = "render(Lcom/mojang/blaze3d/vertex/PoseStack;III)V", at = @At("RETURN"), require = 1)
+	private void trsclient$frameEnd(com.mojang.blaze3d.vertex.PoseStack pose, int ticks, int mouseX, int mouseY, CallbackInfo ci) {
+		ChatHeadHooks.clearFrame();
+	}
 	*///?} elif >=1.16 {
 	@Inject(method = "render(Lcom/mojang/blaze3d/vertex/PoseStack;I)V", at = @At("HEAD"), require = 1)
 	private void trsclient$frame(com.mojang.blaze3d.vertex.PoseStack pose, int ticks, CallbackInfo ci) {
@@ -120,6 +130,12 @@ public abstract class ChatHeadMixin {
 	/*@ModifyArg(method = "render(Lnet/minecraft/client/gui/GuiGraphics;III)V", index = 2, require = 1,
 			at = @At(value = "INVOKE", ordinal = 0, target = "Lnet/minecraft/client/gui/GuiGraphics;drawString(Lnet/minecraft/client/gui/Font;Lnet/minecraft/util/FormattedCharSequence;III)I"))
 	private int trsclient$move(net.minecraft.client.gui.Font font, net.minecraft.util.FormattedCharSequence line, int x, int y, int color) {
+		return ChatHeadHooks.offset(x, line, y, color);
+	}
+	*///?} elif >=1.19.3 && <1.20 {
+	/*@ModifyArg(method = "render(Lcom/mojang/blaze3d/vertex/PoseStack;III)V", index = 2, require = 1,
+			at = @At(value = "INVOKE", ordinal = 0, target = "Lnet/minecraft/client/gui/Font;drawShadow(Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/util/FormattedCharSequence;FFI)I"))
+	private float trsclient$move(com.mojang.blaze3d.vertex.PoseStack pose, net.minecraft.util.FormattedCharSequence line, float x, float y, int color) {
 		return ChatHeadHooks.offset(x, line, y, color);
 	}
 	*///?} elif >=1.16 {
