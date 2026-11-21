@@ -5567,10 +5567,16 @@ the start or heartbeat.
 ### 43.6 Mods and world
 
 - `POST /v1/craftinghosting/server/mods` body `{ projects?: [id | slug], versions?: [{ project, version }] }` (projects
-  ≤ 100, pinned versions ≤ 20 with a Modrinth version id; at least one; at most 50 are processed) ->
+  ≤ 100, pinned versions ≤ 20 with a Modrinth version id; at least one; at most 100 are processed) ->
   `{ installed: [], skipped: [{ project, reason }] }`. The API asks Modrinth first and skips client-only projects
-  (`server_side = unsupported`, reason `client_only`) and unknown ones (`not_found`); the partner picks the newest
-  matching version and installs required dependencies. `409 mods_unsupported` for vanilla servers.
+  (`server_side = unsupported`, reason `client_only`), unknown ones (`not_found`) and ones without a version for the
+  server's loader and Minecraft version (`unsupported`). It picks the newest matching version (release before
+  beta/alpha; `latest` servers use Modrinth's newest release) plus required dependencies (client-only ones left out),
+  answers right away and then downloads the files from `cdn.modrinth.com` (sha512 checked) and puts them into
+  `/mods` or `/plugins` through the partner upload link – the partner's own `POST /mods` only allows about 5 installs
+  per 10 minutes. Files that are already there are skipped. A start during the upload answers `state: starting` and
+  starts once the files are on the server; files that could not be uploaded appear once as a `display.alerts` entry
+  (`mods-failed-<ts>`). `409 mods_unsupported` for vanilla servers, `503 modrinth_unavailable` without Modrinth.
 - `POST /v1/craftinghosting/server/world/upload` -> `{ url, expiresAt }`: a partner upload URL (https, host
   `*.craftinghosting.free`, valid 10 minutes). The launcher uploads `trs-world.zip` (top-level folder `world/`) there
   directly as `multipart/form-data`, field `files` – large files never pass the TRS API.

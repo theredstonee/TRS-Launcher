@@ -19,7 +19,7 @@ const TIMEOUT_MS = 10_000
 const INFO_TTL_MS = 10 * 60 * 1000
 const MISS_TTL_MS = 60 * 1000
 const MC_NAME = /^\w{1,16}$/
-const MAX_MODS = 50
+const MAX_MODS = 100
 const MOD_SLUG = /^[\w.-]{2,64}$/
 const WORLD_ZIP = 'trs-world.zip'
 /** Feste zweite MOTD-Zeile (Plugin) bzw. Anhang an die einzige Zeile (ohne Plugin). */
@@ -299,6 +299,33 @@ async function startOrQueue(ctx: AppContext, row: Row, acceptEula: boolean): Pro
     queueStart(ctx, row.uuid)
     return null
   }
+}
+
+/** Laufendes Mod-Hochladen kurz abwarten; `false` = läuft noch. */
+async function modsReady(uuid: string): Promise<boolean> {
+  const job = modJobs.get(uuid)
+  if (!job || job.done) return true
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const late = new Promise<boolean>((r) => {
+    timer = setTimeout(() => r(false), MOD_START_WAIT_MS)
+  })
+  const ok = await Promise.race([job.promise.then(() => true), late])
+  clearTimeout(timer)
+  return ok
+}
+
+/** Start vormerken (Anzeige „starting“) und nach dem Hochladen der Mods ausführen. */
+function startAfterMods(ctx: AppContext, uuid: string) {
+  const job = modJobs.get(uuid)
+  if (!job) return
+  stopPending(uuid)
+  const entry = { until: ctx.now() + MOD_JOB_MAX_MS + START_WAIT_MS, timer: null as ReturnType<typeof setTimeout> | null }
+  pendingStarts.set(uuid, entry)
+  void job.promise.finally(() => {
+    if (pendingStarts.get(uuid) !== entry) return
+    entry.until = ctx.now() + START_WAIT_MS
+    queueStart(ctx, uuid)
+  })
 }
 
 function stopPending(uuid: string) {
@@ -922,13 +949,14 @@ function adjust(ctx: AppContext, v: ServerView, row: Row): ServerView {
   if (pendingStarts.has(row.uuid) && (out.state === 'offline' || out.state === 'stopping')) out = { ...out, state: 'starting' }
   const q = quotaOf(ctx, row)
   const flow = setupDisplay(row)
-  if (!q) return flow ? { ...out, display: { runtime: null, lines: [], alerts: [], setup: flow } } : out
+  const modAlerts = modsAlerts(row.uuid)
+  if (!q) return flow || modAlerts.length ? { ...out, display: { runtime: null, lines: [], alerts: modAlerts, setup: flow } } : out
   const partnerCd = out.session.cooldownUntil ? Date.parse(out.session.cooldownUntil) : 0
   const ourCd = q.cooldownUntil ? Date.parse(q.cooldownUntil) : 0
   return {
     ...out,
     quota: q,
-    display: { ...displayOf(ctx, out, q), setup: flow },
+    display: { ...withAlerts(displayOf(ctx, out, q), modAlerts), setup: flow },
     session: {
       ...out.session,
       runSeconds: q.usedSeconds,
@@ -981,6 +1009,11 @@ export async function craftingStart(ctx: AppContext, user: UserRow, acceptEula: 
     if (row.setup) await refreshFooter(ctx, row)
     assertQuota(ctx, rowOf(ctx, user.uuid) ?? row)
     if (acceptEula && row.eula_at === null) run(ctx.db, 'UPDATE craftinghosting_servers SET eula_at = ? WHERE uuid = ?', ctx.now(), user.uuid)
+    if (!(await modsReady(user.uuid))) {
+      startAfterMods(ctx, user.uuid)
+      run(ctx.db, 'UPDATE craftinghosting_servers SET rule_stop = NULL WHERE uuid = ?', user.uuid)
+      return fresh(ctx, rowOf(ctx, user.uuid) ?? row)
+    }
     const res = await startOrQueue(ctx, rowOf(ctx, user.uuid) ?? row, acceptEula)
     run(ctx.db, 'UPDATE craftinghosting_servers SET rule_stop = NULL WHERE uuid = ?', user.uuid)
     return fresh(ctx, rowOf(ctx, user.uuid) ?? row, res ?? undefined)
@@ -1126,64 +1159,330 @@ export async function craftingStats(ctx: AppContext, user: UserRow) {
 // ---------------------------------------------------------------- Mods und Welt
 
 const modrinthProject = z.object({ id: z.string(), slug: z.string(), server_side: z.string().nullish() }).loose()
+const modrinthVersion = z.object({
+  id: z.string().regex(MODRINTH_ID),
+  project_id: z.string().regex(MODRINTH_ID),
+  version_type: z.string().max(20).nullish(),
+  files: z.array(z.object({
+    url: z.string().max(1000),
+    filename: z.string().max(300),
+    primary: z.boolean().nullish(),
+    size: z.number().int().nonnegative(),
+    hashes: z.object({ sha512: z.string().regex(/^[0-9a-f]{128}$/) }).loose(),
+  }).loose()).max(20),
+  dependencies: z.array(z.object({
+    project_id: z.string().nullish(),
+    version_id: z.string().nullish(),
+    dependency_type: z.string().max(20),
+  }).loose()).max(200).nullish(),
+}).loose()
+type ModrinthVersion = z.output<typeof modrinthVersion>
+
+const MODRINTH_API = 'https://api.modrinth.com/v2'
+const MODRINTH_UA = 'theredstonee/TRS-Launcher (trs-launcher.theredstonee.de)'
+/** Mod-Dateien lädt die API selbst hoch: `POST /mods` beim Partner geht nur ~5× je 10 min. */
+const MOD_FILE_MAX = 64 * 1024 * 1024
+const MOD_TOTAL_MAX = 768 * 1024 * 1024
+const MOD_BATCH_BYTES = 48 * 1024 * 1024
+const MOD_PARALLEL = 8
+/** So lange wartet ein Start höchstens im Request auf das Hochladen, danach übernimmt der Hintergrund. */
+const MOD_START_WAIT_MS = 12_000
+const MOD_JOB_MAX_MS = 20 * 60_000
+const MOD_FILENAME = /^[\w.+-]{1,150}\.jar$/
+
+interface ModJob { promise: Promise<void>, at: number, done: boolean, failed: string[] }
+/** Laufendes/letztes Hochladen je Konto. */
+const modJobs = new Map<string, ModJob>()
+
+async function modrinthGet(ctx: AppContext, url: string): Promise<unknown | null> {
+  const f = ctx.modrinthFetch ?? fetch
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await f(url, {
+        headers: { 'User-Agent': MODRINTH_UA, 'Accept': 'application/json' },
+        redirect: 'error',
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      })
+      if (res.status === 429 && attempt === 0) {
+        const wait = Math.min(10, Math.max(1, Number(res.headers.get('x-ratelimit-reset')) || 2))
+        await new Promise((r) => setTimeout(r, wait * 1000))
+        continue
+      }
+      if (!res.ok) return null
+      return await res.json()
+    } catch {
+      return null
+    }
+  }
+  return null
+}
 
 /** Reine Client-Mods (Modrinth server_side = unsupported) gar nicht erst schicken. `null` = Modrinth nicht erreichbar. */
 async function modrinthProjects(ctx: AppContext, projects: string[]) {
-  const f = ctx.modrinthFetch ?? fetch
-  const url = `https://api.modrinth.com/v2/projects?ids=${encodeURIComponent(JSON.stringify(projects))}`
+  if (!projects.length) return []
+  const body = await modrinthGet(ctx, `${MODRINTH_API}/projects?ids=${encodeURIComponent(JSON.stringify(projects))}`)
+  const r = z.array(modrinthProject).max(200).safeParse(body)
+  return r.success ? r.data : null
+}
+
+function modLoaders(serverType: string): string[] | null {
+  switch (serverType) {
+    case 'fabric': return ['fabric']
+    case 'quilt': return ['quilt', 'fabric']
+    case 'forge': return ['forge']
+    case 'neoforge': return ['neoforge']
+    case 'paper': return ['paper', 'spigot', 'bukkit']
+    case 'purpur': return ['purpur', 'paper', 'spigot', 'bukkit']
+    default: return null
+  }
+}
+
+/** Neueste passende Version (Release vor Beta/Alpha), wie der Partner sie auch wählen würde. */
+async function latestVersion(ctx: AppContext, project: string, loaders: string[], mc: string): Promise<ModrinthVersion | null> {
+  const q = `loaders=${encodeURIComponent(JSON.stringify(loaders))}&game_versions=${encodeURIComponent(JSON.stringify([mc]))}`
+  const r = z.array(modrinthVersion).max(500).safeParse(await modrinthGet(ctx, `${MODRINTH_API}/project/${encodeURIComponent(project)}/version?${q}`))
+  if (!r.success || !r.data.length) return null
+  return r.data.find((v) => v.version_type === 'release') ?? r.data[0]!
+}
+
+const GAME_VERSION = /^\d+\.\d+(\.\d+)?$/
+
+/** Feste Minecraft-Version; „latest“ = neueste Release-Version laut Modrinth. */
+async function gameVersion(ctx: AppContext, version: string): Promise<string | null> {
+  if (GAME_VERSION.test(version)) return version
+  const r = z.array(z.object({ version: z.string(), version_type: z.string() }).loose()).max(2000)
+    .safeParse(await modrinthGet(ctx, `${MODRINTH_API}/tag/game_version`))
+  const v = r.success ? r.data.find((x) => x.version_type === 'release' && GAME_VERSION.test(x.version))?.version : undefined
+  return v ?? null
+}
+
+async function versionById(ctx: AppContext, id: string): Promise<ModrinthVersion | null> {
+  if (!MODRINTH_ID.test(id)) return null
+  const r = modrinthVersion.safeParse(await modrinthGet(ctx, `${MODRINTH_API}/version/${id}`))
+  return r.success ? r.data : null
+}
+
+async function inBatches<T, R>(items: T[], fn: (item: T) => Promise<R>): Promise<R[]> {
+  const out: R[] = new Array(items.length)
+  let next = 0
+  const worker = async () => {
+    while (next < items.length) {
+      const i = next++
+      out[i] = await fn(items[i]!)
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(MOD_PARALLEL, items.length) }, worker))
+  return out
+}
+
+interface ModFile { project: string, url: string, filename: string, size: number, sha512: string }
+
+function primaryFile(project: string, v: ModrinthVersion): ModFile | null {
+  const f = v.files.find((x) => x.primary) ?? v.files.find((x) => x.filename.endsWith('.jar'))
+  if (!f || f.size > MOD_FILE_MAX) return null
+  let url: URL
   try {
-    const res = await f(url, {
-      headers: { 'User-Agent': 'theredstonee/TRS-Launcher (trs-launcher.theredstonee.de)', 'Accept': 'application/json' },
-      redirect: 'error',
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-    })
-    if (!res.ok) return null
-    return z.array(modrinthProject).max(200).parse(await res.json())
+    url = new URL(f.url)
   } catch {
     return null
   }
+  if (url.protocol !== 'https:' || url.hostname !== 'cdn.modrinth.com' || url.username || url.password || url.port) return null
+  const filename = MOD_FILENAME.test(f.filename) ? f.filename : `${project}-${v.id}.jar`
+  return { project, url: url.href, filename, size: f.size, sha512: f.hashes.sha512 }
+}
+
+/**
+ * Projekte samt Pflicht-Abhängigkeiten zu Dateien auflösen. Client-only-Abhängigkeiten bleiben weg,
+ * fehlende Abhängigkeiten auch (der Server meldet sie beim Start selbst).
+ */
+async function resolveModFiles(ctx: AppContext, send: string[], pinned: Map<string, string>, loaders: string[], mc: string) {
+  const files = new Map<string, ModFile>()
+  const missing = new Set<string>()
+  const seen = new Set<string>()
+  let queue = send.map((p) => ({ project: p, version: pinned.get(p) ?? null, top: true }))
+  for (let depth = 0; queue.length && depth < 4; depth++) {
+    for (const q of queue) seen.add(q.project)
+    const versions = await inBatches(queue, (q) => q.version ? versionById(ctx, q.version) : latestVersion(ctx, q.project, loaders, mc))
+    const deps: { project: string, version: string | null }[] = []
+    queue.forEach((q, i) => {
+      const v = versions[i]
+      const file = v ? primaryFile(q.project, v) : null
+      if (!v || !file) {
+        if (q.top) missing.add(q.project)
+        return
+      }
+      seen.add(v.project_id)
+      files.set(v.project_id, file)
+      for (const d of v.dependencies ?? []) {
+        if (d.dependency_type !== 'required') continue
+        const id = d.project_id && MODRINTH_ID.test(d.project_id) ? d.project_id : null
+        const ver = d.version_id && MODRINTH_ID.test(d.version_id) ? d.version_id : null
+        if (id && !seen.has(id)) deps.push({ project: id, version: ver })
+      }
+    })
+    const unique = [...new Map(deps.map((d) => [d.project, d])).values()].filter((d) => !seen.has(d.project)).slice(0, MAX_MODS)
+    const info = await modrinthProjects(ctx, unique.map((d) => d.project))
+    const clientOnly = new Set((info ?? []).filter((p) => p.server_side === 'unsupported').map((p) => p.id))
+    queue = unique.filter((d) => !clientOnly.has(d.project)).map((d) => ({ ...d, top: false }))
+  }
+  return { files: [...files.values()], missing }
+}
+
+async function downloadMod(ctx: AppContext, file: ModFile): Promise<Uint8Array<ArrayBuffer> | null> {
+  const f = ctx.modrinthFetch ?? fetch
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await f(file.url, { headers: { 'User-Agent': MODRINTH_UA }, redirect: 'error', signal: AbortSignal.timeout(60_000) })
+      if (!res.ok) continue
+      const data = new Uint8Array(await res.arrayBuffer())
+      if (data.length > MOD_FILE_MAX) return null
+      if (createHash('sha512').update(data).digest('hex') !== file.sha512) continue
+      return data
+    } catch {
+      // nächster Versuch
+    }
+  }
+  return null
+}
+
+/** Dateien per Upload-Link (multipart „files“) in `dir` legen – ohne das Limit von `POST /mods`. */
+async function uploadModBatch(ctx: AppContext, row: Row, dir: string, batch: { file: ModFile, data: Uint8Array<ArrayBuffer> }[]): Promise<boolean> {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = z.object({ url: z.string().max(2000) }).loose().safeParse(await call(ctx, 'POST', path(row, '/files/upload-url'), { directory: dir }))
+      if (!res.success || !URL.canParse(res.data.url)) continue
+      const url = new URL(res.data.url)
+      if (url.protocol !== 'https:' || !UPLOAD_HOST.test(url.hostname)) return false
+      const form = new FormData()
+      for (const b of batch) form.append('files', new Blob([b.data], { type: 'application/java-archive' }), b.file.filename)
+      const f = ctx.craftinghostingFetch ?? fetch
+      const up = await f(url.href, { method: 'POST', body: form, redirect: 'error', signal: AbortSignal.timeout(5 * 60_000) })
+      if (up.ok) return true
+    } catch {
+      // nächster Versuch
+    }
+  }
+  return false
+}
+
+async function uploadMods(ctx: AppContext, row: Row, dir: string, files: ModFile[], job: ModJob): Promise<string[]> {
+  const existing = new Set<string>()
+  try {
+    for (const e of await listDir(ctx, row, dir)) existing.add(e.name)
+  } catch {
+    // Ordner gibt es noch nicht – der Upload legt ihn an.
+  }
+  const todo = files.filter((f) => !existing.has(f.filename))
+  const done = files.filter((f) => existing.has(f.filename)).map((f) => f.project)
+  let total = 0
+  let batch: { file: ModFile, data: Uint8Array<ArrayBuffer> }[] = []
+  let batchBytes = 0
+  const flush = async () => {
+    if (!batch.length) return
+    if (await uploadModBatch(ctx, row, dir, batch)) done.push(...batch.map((b) => b.file.project))
+    else job.failed.push(...batch.map((b) => b.file.filename))
+    batch = []
+    batchBytes = 0
+  }
+  for (let i = 0; i < todo.length; i += MOD_PARALLEL) {
+    const part = todo.slice(i, i + MOD_PARALLEL)
+    const data = await Promise.all(part.map((f) => downloadMod(ctx, f)))
+    for (let k = 0; k < part.length; k++) {
+      const file = part[k]!
+      const bytes = data[k]
+      if (!bytes || total + bytes.length > MOD_TOTAL_MAX) {
+        job.failed.push(file.filename)
+        continue
+      }
+      total += bytes.length
+      if (batchBytes + bytes.length > MOD_BATCH_BYTES) await flush()
+      batch.push({ file, data: bytes })
+      batchBytes += bytes.length
+    }
+  }
+  await flush()
+  return done
+}
+
+function rememberMods(ctx: AppContext, uuid: string, projects: string[]) {
+  if (!projects.length) return
+  const now = rowOf(ctx, uuid)
+  if (!now) return
+  const known = new Set(z.array(z.string()).catch([]).parse(JSON.parse(now.mods ?? '[]')))
+  for (const p of projects) known.add(p)
+  run(ctx.db, 'UPDATE craftinghosting_servers SET mods = ? WHERE uuid = ?', JSON.stringify([...known].slice(0, 200)), uuid)
+}
+
+function startModJob(ctx: AppContext, row: Row, dir: string, files: ModFile[]): ModJob {
+  const prev = modJobs.get(row.uuid)
+  const job: ModJob = { promise: Promise.resolve(), at: ctx.now(), done: false, failed: [] }
+  const work = async () => {
+    if (prev && !prev.done) await prev.promise.catch(() => undefined)
+    const timeout = new Promise<string[]>((r) => setTimeout(() => r([]), MOD_JOB_MAX_MS).unref?.())
+    const done = await Promise.race([uploadMods(ctx, row, dir, files, job), timeout])
+    rememberMods(ctx, row.uuid, done)
+  }
+  job.promise = work()
+    .catch((e) => {
+      console.error('[trs-api] CraftingHosting mod upload failed', e)
+      if (!job.failed.length) job.failed.push(...files.map((f) => f.filename))
+    })
+    .finally(() => {
+      job.done = true
+    })
+  modJobs.set(row.uuid, job)
+  return job
+}
+
+/** Test-Hilfe: laufendes Hochladen abwarten. */
+export async function craftingModsDone(uuid: string): Promise<void> {
+  await modJobs.get(uuid)?.promise
 }
 
 type SkipReason = 'client_only' | 'not_found' | 'unsupported'
 
+/**
+ * Modrinth-Mods auf den Server (§43.10). Prüft und löst sofort auf (Antwort mit installed/skipped);
+ * herunterladen und hochladen läuft danach im Hintergrund, ein Start wartet darauf.
+ */
 export async function craftingInstallMods(ctx: AppContext, user: UserRow, projects: string[], versions: { project: string, version: string }[] = []) {
   assertFeature(ctx, 'addons')
   return onServer(ctx, user, async (row) => {
     const pinned = new Map(versions.map((v) => [v.project, v.version]))
     const wanted = [...new Set([...projects, ...pinned.keys()])].slice(0, MAX_MODS)
     const skipped: { project: string, reason: SkipReason }[] = []
+    const p = parseServer(await call(ctx, 'GET', path(row)))
+    const serverType = p.serverType ?? ''
+    const loaders = modLoaders(serverType)
+    const dir = addonDir(serverType)
+    if (!loaders || !dir) throw new ApiError(409, 'mods_unsupported', 'No plugins or mods on this server type')
     const known = await modrinthProjects(ctx, wanted)
-    let send = wanted
-    if (known) {
-      const byKey = new Map<string, z.output<typeof modrinthProject>>()
-      for (const p of known) {
-        byKey.set(p.id, p)
-        byKey.set(p.slug, p)
-      }
-      send = []
-      for (const p of wanted) {
-        const m = byKey.get(p)
-        if (!m) skipped.push({ project: p, reason: 'not_found' })
-        else if (m.server_side === 'unsupported') skipped.push({ project: p, reason: 'client_only' })
-        else send.push(p)
-      }
+    if (!known) throw unavailable('modrinth_unavailable', 'Modrinth is not reachable, try again later')
+    const byKey = new Map<string, z.output<typeof modrinthProject>>()
+    for (const k of known) {
+      byKey.set(k.id, k)
+      byKey.set(k.slug, k)
     }
+    const send: string[] = []
+    for (const w of wanted) {
+      const m = byKey.get(w)
+      if (!m) skipped.push({ project: w, reason: 'not_found' })
+      else if (m.server_side === 'unsupported') skipped.push({ project: w, reason: 'client_only' })
+      else send.push(w)
+    }
+    if (!send.length) return { installed: [], skipped }
+    const mc = await gameVersion(ctx, p.version ?? '')
+    if (!mc) throw unavailable('modrinth_unavailable', 'Modrinth is not reachable, try again later')
+    // Auflösen über die Projekt-ID, Antwort aber mit dem Namen, den der Client geschickt hat.
+    const idOf = new Map(send.map((s) => [byKey.get(s)!.id, s]))
+    const pinnedById = new Map([...pinned].filter(([k]) => byKey.has(k)).map(([k, v]) => [byKey.get(k)!.id, v]))
+    const { files, missing } = await resolveModFiles(ctx, [...idOf.keys()], pinnedById, loaders, mc)
     const installed: string[] = []
-    for (const p of send) {
-      try {
-        await call(ctx, 'POST', path(row, '/mods'), pinned.has(p) ? { project: p, version: pinned.get(p) } : { project: p })
-        installed.push(p)
-      } catch (e) {
-        if (!(e instanceof ApiError) || e.code === 'mods_unsupported' || e.code === 'no_server' || e.status >= 500) throw e
-        skipped.push({ project: p, reason: e.code === 'mod_not_found' ? 'not_found' : 'unsupported' })
-      }
+    for (const [id, asked] of idOf) {
+      if (missing.has(id)) skipped.push({ project: asked, reason: 'unsupported' })
+      else installed.push(asked)
     }
-    if (installed.length) {
-      const now = rowOf(ctx, row.uuid)
-      const known = new Set(z.array(z.string()).catch([]).parse(JSON.parse(now?.mods ?? '[]')))
-      for (const p of installed) known.add(p)
-      run(ctx.db, 'UPDATE craftinghosting_servers SET mods = ? WHERE uuid = ?', JSON.stringify([...known].slice(0, 200)), row.uuid)
-    }
+    if (files.length) startModJob(ctx, row, dir.dir, files)
     return { installed, skipped }
   })
 }
@@ -2432,6 +2731,7 @@ const TEXTS: Record<string, Record<Lang, string>> = {
   tileIdleReset: { 'en': 'Unused for %d days? Your full %h h are back.', 'de': '%d Tage nicht genutzt? Dann hast du wieder volle %h h.', 'es': '¿%d días sin usarlo? Vuelves a tener %h h completas.', 'fr': 'Pas utilisé pendant %d jours ? Tu récupères tes %h h.', 'nl': '%d dagen niet gebruikt? Dan heb je weer volle %h u.', 'pl': 'Nieużywany przez %d dni? Znów masz pełne %h h.', 'pt-BR': 'Sem uso por %d dias? Você tem as %h h completas de novo.', 'tr': '%d gün kullanılmadı mı? Tam %h sa yeniden senin.' },
   tileWeekly: { 'en': 'At least %o h offline per week (Mon–Sun).', 'de': 'Mindestens %o h pro Woche offline (Mo–So).', 'es': 'Al menos %o h apagado por semana (lun–dom).', 'fr': 'Au moins %o h hors ligne par semaine (lun–dim).', 'nl': 'Minstens %o u per week offline (ma–zo).', 'pl': 'Co najmniej %o h offline w tygodniu (pon–niedz).', 'pt-BR': 'Pelo menos %o h offline por semana (seg–dom).', 'tr': 'Haftada en az %o sa kapalı (Pzt–Paz).' },
   tileDelete: { 'en': 'Servers are deleted after %d days without a start.', 'de': 'Server werden nach %d Tagen ohne Start gelöscht.', 'es': 'Los servidores se eliminan tras %d días sin iniciarse.', 'fr': 'Les serveurs sont supprimés après %d jours sans démarrage.', 'nl': 'Servers worden na %d dagen zonder start verwijderd.', 'pl': 'Serwery są usuwane po %d dniach bez uruchomienia.', 'pt-BR': 'Servidores são apagados após %d dias sem iniciar.', 'tr': 'Sunucular %d gün başlatılmazsa silinir.' },
+  modsFailed: { 'en': '%n mod files could not be put on your server: %l', 'de': '%n Mod-Dateien kamen nicht auf deinen Server: %l', 'es': 'No se pudieron subir %n archivos de mods a tu servidor: %l', 'fr': '%n fichiers de mods n’ont pas pu être mis sur ton serveur : %l', 'nl': '%n moddbestanden konden niet op je server worden gezet: %l', 'pl': 'Nie udało się wgrać %n plików modów na serwer: %l', 'pt-BR': '%n arquivos de mods não puderam ser enviados ao seu servidor: %l', 'tr': '%n mod dosyası sunucuna yüklenemedi: %l' },
   tileEula: { 'en': 'You accept the Minecraft EULA when creating the server.', 'de': 'Die Minecraft-EULA akzeptierst du beim Anlegen.', 'es': 'Aceptas el EULA de Minecraft al crear el servidor.', 'fr': 'Tu acceptes l’EULA de Minecraft à la création.', 'nl': 'Je accepteert de Minecraft-EULA bij het aanmaken.', 'pl': 'EULA Minecrafta akceptujesz przy tworzeniu.', 'pt-BR': 'Você aceita o EULA do Minecraft ao criar.', 'tr': 'Minecraft EULA’sını oluştururken kabul edersin.' },
 }
 
@@ -2444,6 +2744,18 @@ function txt(key: string, vars: Record<string, string | number> = {}): Localized
     out[lang] = t
   }
   return out
+}
+
+function withAlerts(d: Display, extra: Display['alerts']): Display {
+  return extra.length ? { ...d, alerts: [...d.alerts, ...extra] } : d
+}
+
+/** Nach dem Hochladen: welche Mod-Dateien nicht auf den Server kamen (einmal als Hinweis). */
+function modsAlerts(uuid: string): Display['alerts'] {
+  const job = modJobs.get(uuid)
+  if (!job?.done || !job.failed.length) return []
+  const names = job.failed.slice(0, 8).join(', ') + (job.failed.length > 8 ? ' …' : '')
+  return [{ id: `mods-failed-${job.at}`, text: txt('modsFailed', { n: job.failed.length, l: names }), level: 'warning' }]
 }
 
 function displayOf(ctx: AppContext, v: ServerView, q: Quota): Display {

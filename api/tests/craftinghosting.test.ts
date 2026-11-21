@@ -5,7 +5,7 @@ import {
   craftingServer, craftingSetSettings, craftingSettings, craftingStart, craftingStats, craftingStop, craftingUpdate,
   craftingAddons, craftingDeleteFiles, craftingFiles, craftingProperties, craftingReadFile, craftingRemoveAddon,
   craftingSetProperties, craftingWriteFile, craftingWorlds, craftingActivateWorld, craftingDeleteWorld, craftingWorldFiles,
-  craftingDownloadUrls, worldNameQuery, modsBody, craftingChangeVersion, craftingBackups, versionBody,
+  craftingDownloadUrls, worldNameQuery, modsBody, craftingModsDone, craftingChangeVersion, craftingBackups, versionBody,
   adminCraftingConfig, adminSetCraftingConfig, adminCraftingBlock, relayWake as wakeForTest,
   craftingReinstall, craftingBackupAction, craftingWebhook, verifyWebhook, adminWebhook, webhookSecret, adminCraftingResetQuota, autoStep,
   adminCraftingDelete, adminCraftingServers, adminCraftingStop, craftingCheckSubdomain, relayResolve, relayWake, sweepCraftingDns, craftingRestartDone, craftingWorldImport, craftingWorldUpload, createServerBody, MOTD_FOOTER, settingsBody,
@@ -48,6 +48,9 @@ class FakePartner {
   settings: Record<string, unknown> = { motd: 'A Minecraft Server', maxPlayers: 20, whitelist: false, pvp: null, levelType: 'minecraft\\:normal' }
   mods: string[] = []
   modCalls: unknown[] = []
+  /** Über den Upload-Link hochgeladene Dateien (Name → Größe). */
+  uploads = new Map<string, number>()
+  uploadFail = 0
   uploadHost = 'upload.craftinghosting.free'
   /** So oft antwortet die Node noch mit 503 service_unavailable (Start/Logs). */
   notReady = 0
@@ -67,6 +70,15 @@ class FakePartner {
     const method = init?.method ?? 'GET'
     const path = url.pathname.replace('/api/v1/partner', '')
     this.calls.push(`${method} ${path}`)
+    if (url.hostname === this.uploadHost && path === '/upload') {
+      if (this.uploadFail > 0) {
+        this.uploadFail--
+        return this.err(500, 'upload_failed')
+      }
+      const form = await new Response(init!.body as FormData).formData()
+      for (const f of form.getAll('files') as File[]) this.uploads.set(f.name, f.size)
+      return this.json(200, { ok: true })
+    }
     if ((init?.headers as Record<string, string>)?.Authorization !== `Bearer ${KEY}`) return this.err(401, 'invalid_api_key')
     if (this.fail) return this.err(this.fail.status, this.fail.code, this.fail.fields)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -455,20 +467,92 @@ describe('craftinghosting', () => {
   it('installs server mods and skips client-only ones', async () => {
     const { env, partner } = setup()
     const [u] = await players(env, 'Steve')
-    await craftingCreate(env.ctx, u!, body({ serverType: 'paper' }))
-    env.ctx.modrinthFetch = (async () => new Response(JSON.stringify([
+    await craftingCreate(env.ctx, u!, body({ serverType: 'fabric', version: '1.21.1' }))
+    const jar = (n: string) => new TextEncoder().encode(`jar-${n}`)
+    const hash = (n: string) => createHash('sha512').update(jar(n)).digest('hex')
+    const version = (id: string, project: string, file: string, deps: { project_id: string, dependency_type: string }[] = []) => ({
+      id, project_id: project, version_type: 'release', dependencies: deps,
+      files: [{ url: `https://cdn.modrinth.com/data/${project}/versions/${id}/${file}`, filename: file, primary: true, size: jar(file).length, hashes: { sha512: hash(file) } }],
+    })
+    const projects = [
       { id: 'AANobbMI', slug: 'sodium', server_side: 'unsupported' },
       { id: 'P7dR8mSH', slug: 'fabric-api', server_side: 'required' },
+      { id: 'uXXizFIs', slug: 'ferrite-core', server_side: 'optional' },
       { id: 'missingX', slug: 'missing', server_side: 'optional' },
-    ]), { status: 200 })) as typeof fetch
-    const r = await craftingInstallMods(env.ctx, u!, ['sodium', 'fabric-api', 'missing', 'gone'])
-    expect(r.installed).toEqual(['fabric-api'])
+      { id: 'lhGA9TYQ', slug: 'architectury-api', server_side: 'required' },
+      { id: 'clientDp', slug: 'client-dep', server_side: 'unsupported' },
+    ]
+    const versions: Record<string, unknown[]> = {
+      P7dR8mSH: [{ ...version('fapiV001', 'P7dR8mSH', 'fabric-api-0.116.jar'), version_type: 'beta' }, version('fapiV002', 'P7dR8mSH', 'fabric-api-0.115.jar')],
+      uXXizFIs: [version('ferrV001', 'uXXizFIs', 'ferritecore-7.0.3.jar', [
+        { project_id: 'lhGA9TYQ', dependency_type: 'required' },
+        { project_id: 'clientDp', dependency_type: 'required' },
+        { project_id: 'optDep01', dependency_type: 'optional' },
+      ])],
+      lhGA9TYQ: [version('archV001', 'lhGA9TYQ', 'architectury-13.jar')],
+      missingX: [],
+    }
+    const seen: string[] = []
+    env.ctx.modrinthFetch = (async (input: string | URL | Request) => {
+      const url = new URL(String(input))
+      seen.push(url.pathname)
+      if (url.hostname === 'cdn.modrinth.com') return new Response(jar(url.pathname.split('/').pop()!), { status: 200 })
+      if (url.pathname === '/v2/projects') {
+        const ids = JSON.parse(url.searchParams.get('ids')!) as string[]
+        return new Response(JSON.stringify(projects.filter((p) => ids.includes(p.id) || ids.includes(p.slug))), { status: 200 })
+      }
+      const m = /^\/v2\/project\/([^/]+)\/version$/.exec(url.pathname)
+      if (m) {
+        expect(url.searchParams.get('loaders')).toBe('["fabric"]')
+        expect(url.searchParams.get('game_versions')).toBe('["1.21.1"]')
+        return new Response(JSON.stringify(versions[decodeURIComponent(m[1]!)] ?? []), { status: 200 })
+      }
+      return new Response('[]', { status: 404 })
+    }) as typeof fetch
+    partner.files.set('/mods/fabric-api-0.115.jar', 'x')
+    partner.uploadFail = 1
+    const r = await craftingInstallMods(env.ctx, u!, ['sodium', 'fabric-api', 'ferrite-core', 'missing', 'gone'])
+    expect(r.installed).toEqual(['fabric-api', 'ferrite-core'])
     expect(r.skipped).toEqual([
       { project: 'sodium', reason: 'client_only' },
       { project: 'gone', reason: 'not_found' },
-      { project: 'missing', reason: 'not_found' },
+      { project: 'missing', reason: 'unsupported' },
     ])
-    expect(partner.mods).toEqual(['fabric-api'])
+    // Start wartet auf das Hochladen.
+    const started = await craftingStart(env.ctx, u!, true)
+    await craftingModsDone(u!.uuid)
+    expect(['starting', 'running']).toContain(started.state)
+    // Release vor Beta, Abhängigkeit mit, Client-only- und optionale Abhängigkeit nicht, vorhandene Datei nicht nochmal.
+    expect([...partner.uploads.keys()].sort()).toEqual(['architectury-13.jar', 'ferritecore-7.0.3.jar'])
+    expect(partner.modCalls).toEqual([])
+    expect(seen.some((p) => p.includes('optDep01'))).toBe(false)
+  })
+
+  it('reports mod files that could not be uploaded', async () => {
+    const { env, partner } = setup()
+    const [u] = await players(env, 'Steve')
+    await craftingCreate(env.ctx, u!, body({ serverType: 'fabric', version: '1.21.1' }))
+    env.ctx.modrinthFetch = (async (input: string | URL | Request) => {
+      const url = new URL(String(input))
+      if (url.pathname === '/v2/projects') return new Response(JSON.stringify([{ id: 'uXXizFIs', slug: 'ferrite-core', server_side: 'optional' }]), { status: 200 })
+      if (url.hostname === 'cdn.modrinth.com') return new Response('tampered', { status: 200 })
+      return new Response(JSON.stringify([{ id: 'ferrV001', project_id: 'uXXizFIs', version_type: 'release', dependencies: [],
+        files: [{ url: 'https://cdn.modrinth.com/data/x/ferritecore.jar', filename: 'ferritecore.jar', primary: true, size: 4, hashes: { sha512: 'a'.repeat(128) } }] }]), { status: 200 })
+    }) as typeof fetch
+    expect((await craftingInstallMods(env.ctx, u!, ['ferrite-core'])).installed).toEqual(['ferrite-core'])
+    await craftingModsDone(u!.uuid)
+    expect(partner.uploads.size).toBe(0)
+    const s = await craftingServer(env.ctx, u!)
+    const alert = s!.display!.alerts.find((a) => a.id.startsWith('mods-failed-'))
+    expect(alert?.text.de).toBe('1 Mod-Dateien kamen nicht auf deinen Server: ferritecore.jar')
+  })
+
+  it('mods need a mod or plugin server and Modrinth', async () => {
+    const { env } = setup()
+    const [u] = await players(env, 'Steve')
+    await craftingCreate(env.ctx, u!, body({ serverType: 'vanilla' }))
+    env.ctx.modrinthFetch = (async () => new Response('[]', { status: 200 })) as typeof fetch
+    expect(await codeAsync(() => craftingInstallMods(env.ctx, u!, ['lithium']))).toBe('mods_unsupported')
   })
 
   it('world upload only to the partner host; import needs a stopped server', async () => {
@@ -868,8 +952,25 @@ describe('craftinghosting routes: website session', () => {
     expect(worldNameQuery.parse({ name: 'lobby' }).name).toBe('lobby')
 
     const parsed = modsBody.parse({ versions: [{ project: 'chunky', version: 'AbCdEf12' }] })
-    await craftingInstallMods(env.ctx, u!, parsed.projects, parsed.versions)
-    expect(partner.modCalls.at(-1)).toEqual({ project: 'chunky', version: 'AbCdEf12' })
+    const jar = new TextEncoder().encode('chunky')
+    const asked: string[] = []
+    env.ctx.modrinthFetch = (async (input: string | URL | Request) => {
+      const url = new URL(String(input))
+      asked.push(url.pathname)
+      if (url.pathname === '/v2/projects') return new Response(JSON.stringify([{ id: 'fALzjamp', slug: 'chunky', server_side: 'required' }]), { status: 200 })
+      if (url.pathname === '/v2/tag/game_version') return new Response(JSON.stringify([{ version: '26.1-snapshot-1', version_type: 'snapshot' }, { version: '1.21.11', version_type: 'release' }]), { status: 200 })
+      if (url.pathname === '/v2/version/AbCdEf12') {
+        return new Response(JSON.stringify({ id: 'AbCdEf12', project_id: 'fALzjamp', version_type: 'release', dependencies: [],
+          files: [{ url: 'https://cdn.modrinth.com/data/fALzjamp/versions/AbCdEf12/Chunky-1.4.jar', filename: 'Chunky-1.4.jar', primary: true, size: jar.length,
+            hashes: { sha512: createHash('sha512').update(jar).digest('hex') } }] }), { status: 200 })
+      }
+      if (url.hostname === 'cdn.modrinth.com') return new Response(jar, { status: 200 })
+      return new Response('[]', { status: 404 })
+    }) as typeof fetch
+    expect((await craftingInstallMods(env.ctx, u!, parsed.projects, parsed.versions)).installed).toEqual(['chunky'])
+    await craftingModsDone(u!.uuid)
+    expect([...partner.uploads.keys()]).toEqual(['Chunky-1.4.jar'])
+    expect(asked).not.toContain('/v2/project/fALzjamp/version')
   })
 
   it('feature switches come from the API; switched-off functions answer feature_disabled', async () => {
