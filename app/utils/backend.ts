@@ -66,6 +66,7 @@ import {
   type CreatorTier,
   type HelperRight,
 } from './creator'
+import { myPartnerSchema, redeemOutcomeSchema } from './partner'
 import { creatorStatsDetailSchema, creatorStatsListSchema, type SortOrder, type StatSortKey } from './creatorStats'
 import { bisectViewSchema } from './bisect'
 import { dependencyGraphSchema } from './modDependencies'
@@ -992,6 +993,8 @@ export const backend = {
     reportCape: (id: string, reason: TrsReportReason, note: string | null) =>
       call<void>('trs_report_cape', { id, reason, note }),
     redeem: (code: string) => checked(trsRedeemSchema, 'trs_redeem', { code }),
+    /** Gemeinsames Code-Feld (§44.2): Creator-, Partner- oder Umhang-Code; ältere APIs über die alten Wege. */
+    redeemAny: (code: string) => checked(redeemOutcomeSchema, 'trs_redeem_any', { code }),
     /** Eigene Kopf-Kosmetik (Quietscheente, v2-Modelle) und Auf-/Absetzen (`null`). */
     hats: () => checked(z.array(trsHatSchema), 'trs_hats'),
     /** Alle Kopf-Kosmetik-Teile (besessen + gesperrt) mit Vorschaubildern. */
@@ -1302,6 +1305,12 @@ export const backend = {
    * Creator-Programm (API §35): Codes einlösen, unterstützen, blockieren, Dashboard und
    * Team-Verwaltung. Bilder (Symbol-Streifen, Fan-Umhänge) kommen als Data-URL aus dem Kern.
    */
+  /** Partner-Programm (API §44): eigener Partner, Partner-Kosmetik, Mitgliedschaften. */
+  partner: {
+    me: () => checked(myPartnerSchema, 'partner_me'),
+    endSupport: () => call<void>('partner_end_support'),
+  },
+
   creator: {
     me: () => checked(myCreatorSchema, 'creator_me'),
     redeem: (code: string) => checked(creatorRedeemSchema, 'creator_redeem', { code }),

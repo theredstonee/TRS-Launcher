@@ -359,7 +359,9 @@
       "feature_unavailable": "Bu henüz kullanılamıyor – yakında geliyor.",
       "hosting_maintenance": "Barındırma bakımda – lütfen daha sonra tekrar dene.",
       "server_blocked": "Sunucun TRS ekibi tarafından engellendi.",
-      "feature_disabled": "Bu işlev şu anda kapalı."
+      "feature_disabled": "Bu işlev şu anda kapalı.",
+      "partner_code_used": "Bu tek kullanımlık kod zaten kullanılmış veya engellenmiş.",
+      "partner_not_found": "Bu partner yok (artık yok)."
     },
     "auth": {
       "accountMismatch": "Bu giriş başka bir hesaba ait – lütfen tekrar giriş yap.",
@@ -1038,6 +1040,9 @@
       "imageTooLarge": "Görsel çok büyük (en fazla 2 MB).",
       "invalidImage": "Örnek görsel PNG veya JPG olmalı.",
       "speciesLength": "Hayvan: 1 ile {max} karakter arası."
+    },
+    "partner": {
+      "invalidCode": "Kodlar 4 ila 32 karakterdir: harfler, rakamlar ve tireler."
     }
   },
   "browse": {
@@ -3653,9 +3658,10 @@
     "pendingCount": "{n} pelerin onay bekliyor. | {n} pelerin onay bekliyor.",
     "redeemDialog": {
       "codeLabel": "Kod",
-      "hint": "Büyük/küçük harf ve tireler önemli değil.",
+      "hint": "Creator, partner ve pelerin kodları. Büyük/küçük harf ve tireler önemli değil.",
       "checking": "Kontrol ediliyor …",
-      "submit": "Kullan"
+      "submit": "Kullan",
+      "placeholder": "Kod, ör. CRAFTING"
     },
     "deleteDialog": {
       "title": "Pelerin silinsin mi?",
@@ -8106,6 +8112,41 @@
     },
     "quota": {
       "warn": "Sunucun {minutes} dk içinde duracak – çalışma süresi neredeyse bitti."
+    }
+  },
+  "partner": {
+    "title": "Partner",
+    "nobody": "Henüz partnerin yok. Örneğin sunucu sağlayıcından aldığın bir partner kodunu kullan.",
+    "since": "{date} tarihinden beri",
+    "switchFrom": "başka partner {date} tarihinden itibaren",
+    "switchNow": "istediğin zaman değiştirebilirsin",
+    "end": "Desteklemeyi bırak",
+    "endHint": "Partner kozmetiklerin kalır.",
+    "endTitle": "{name} desteklemeyi bırakmak istiyor musun?",
+    "endText": "Artık {name} destekçisi sayılmayacaksın. Açtığın partner kozmetikleri sende kalır.",
+    "endSwitchFrom": "Başka bir partneri {date} tarihinden itibaren seçebilirsin; {name} partnerini istediğin zaman.",
+    "endSwitchNow": "Başka bir partneri hemen seçebilirsin; {name} partnerini istediğin zaman.",
+    "ended": "Artık {name} desteklemiyorsun.",
+    "ownedTitle": "Partner kozmetiklerin",
+    "ownedHint": "Gardırobunda durur ve partner değiştirsen de kalır.",
+    "itemBy": "{name} tarafından",
+    "dashboard": "Partner panelini aç",
+    "dashboardOf": "Panel: {name}",
+    "separateHint": "Creator ve partner ayrıdır: aynı anda bir creator ve bir partner destekleyebilirsin. Partneri 30 günde bir değiştirebilirsin.",
+    "categories": {
+      "hosting": "Hosting",
+      "network": "Ağ",
+      "other": "Partner"
+    },
+    "source": "Partner: {name}",
+    "redeemed": {
+      "now": "Artık {name} destekliyorsun.",
+      "already": "Zaten {name} destekliyorsun.",
+      "locked": "{name} kodu kullanıldı. Başka bir partneri {date} tarihinden itibaren destekleyebilirsin.",
+      "granted": "Açıldı: {items}."
+    },
+    "toast": {
+      "open": "Görüntüle"
     }
   }
 }

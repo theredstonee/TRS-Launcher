@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { TEAM_WEBSITE } from '~/utils/teamAccess'
-import { cleanCodeInput, normalizeCreatorCode, supportDays, switchState, type CreatorRedeem } from '~/utils/creator'
+import { cleanCodeInput, normalizeCreatorCode, supportDays, switchState } from '~/utils/creator'
+import { cleanRedeemInput, normalizeRedeemCode, REDEEM_CODE_MAX } from '~/utils/partner'
 
-// Creator-Seite als Fan: Code einlösen, wen man unterstützt (mit „Nicht mehr
-// unterstützen“), Vorschau im Spiel, Creator per Code blockieren, eigene
-// Fan-Umhänge und „Selbst Creator werden“ mit den drei Stufen.
+// Creator-Seite als Fan: Code einlösen (Creator, Partner, Umhang), wen man
+// unterstützt – Creator und Partner (mit „Nicht mehr unterstützen“), Vorschau im
+// Spiel, Creator per Code blockieren, eigene Fan-Umhänge und „Selbst Creator
+// werden“ mit den drei Stufen.
 const store = useCreatorStore()
 const accounts = useAccountsStore()
 const applications = useApplicationsStore()
@@ -17,37 +19,32 @@ const days = computed(() => supportDays(me.value.support.startedAt))
 const player = computed(() => accounts.active?.name ?? 'Steve')
 const own = computed(() => me.value.creator)
 
-// --- Einlösen -------------------------------------------------------------------------
+// --- Einlösen ---------------------------------------------------------------------------
+const partner = usePartnerStore()
+const codeRedeem = useCodeRedeem()
 const code = ref('')
 const redeeming = ref(false)
 
+onMounted(() => void partner.load())
+watch(() => accounts.active?.id, () => void partner.load())
+
 async function redeem() {
-  const c = normalizeCreatorCode(code.value)
+  const c = normalizeRedeemCode(code.value)
   if (!c) {
-    toasts.error(t('creator.fan.invalidCode'))
+    toasts.error(t('errors.partner.invalidCode'))
     return
   }
-  const before = supported.value?.uuid ?? null
   redeeming.value = true
   try {
-    const r = await store.redeem(c)
+    const { outcome, text } = await codeRedeem.redeem(c)
     code.value = ''
-    toasts.ok(redeemText(r, before))
+    if (outcome.kind === 'cape') toasts.ok(text, { label: t('creator.fan.openSkins'), run: () => void navigateTo('/skins') })
+    else toasts.ok(text)
   } catch (e) {
     toasts.error(e)
   } finally {
     redeeming.value = false
   }
-}
-
-function redeemText(r: CreatorRedeem, before: string | null): string {
-  const name = r.creator.name
-  const cape = r.creator.fanCape?.name ?? ''
-  if (r.supportChanged) return r.fanCapeGranted ? t('creator.fan.redeemed.nowWithCape', { name, cape }) : t('creator.fan.redeemed.now', { name })
-  const left = switchState({ startedAt: null, lastCreatorUuid: before, switchAvailableAt: r.switchAvailableAt }).daysLeft
-  if (r.fanCapeGranted) return t('creator.fan.redeemed.capeOnly', { name, cape, days: left }, left)
-  if (before === r.creator.uuid) return t('creator.fan.redeemed.already', { name })
-  return t('creator.fan.redeemed.locked', { days: left }, left)
 }
 
 // --- Nicht mehr unterstützen ------------------------------------------------------------
@@ -128,32 +125,31 @@ function channelLine(c: { platform: string; followers: number | null }): string 
       </div>
     </div>
 
-    <div class="grid gap-4 md:grid-cols-2">
-      <!-- Code einlösen -->
-      <section class="card p-4" :aria-label="t('creator.fan.redeemTitle')">
+    <!-- Code einlösen -->
+    <section class="card p-4" :aria-label="t('creator.fan.redeemTitle')">
+      <div class="flex flex-wrap items-center gap-x-4 gap-y-2">
         <h2 class="section-title">{{ t('creator.fan.redeemTitle') }}</h2>
-        <form class="mt-3 flex flex-wrap gap-2" @submit.prevent="redeem">
+        <form class="flex min-w-64 flex-1 flex-wrap gap-2" @submit.prevent="redeem">
           <input
             :value="code"
             class="field w-56 flex-1 font-mono text-base font-bold tracking-widest uppercase"
             :placeholder="t('creator.fan.codePlaceholder')"
-            :maxlength="20"
+            :maxlength="REDEEM_CODE_MAX"
             autocomplete="off"
             spellcheck="false"
             :aria-label="t('creator.fan.codeLabel')"
             data-testid="creator-code-input"
-            @input="code = cleanCodeInput(($event.target as HTMLInputElement).value)"
+            @input="code = cleanRedeemInput(($event.target as HTMLInputElement).value)"
           />
           <button class="btn btn-primary" :disabled="redeeming || !code" data-testid="creator-redeem">
             {{ redeeming ? t('creator.fan.redeeming') : t('creator.fan.redeem') }}
           </button>
         </form>
-        <p class="mt-2 text-xs text-base-400">{{ t('creator.fan.redeemHint') }}</p>
-        <p v-if="me.support.lastCreatorUuid" class="mt-3 rounded-lg border-l-2 border-redstone-500 bg-base-850 px-3 py-2 text-xs text-base-400">
-          {{ sw.locked ? t('creator.fan.switchIn', { days: sw.daysLeft }, sw.daysLeft) : t('creator.fan.switchNow') }}
-        </p>
-      </section>
+      </div>
+      <p class="mt-2 text-xs text-base-400">{{ t('creator.fan.redeemHint') }}</p>
+    </section>
 
+    <div class="grid gap-4 md:grid-cols-2">
       <!-- Wen ich unterstütze -->
       <section class="card p-4" :aria-label="t('creator.fan.supportingTitle')" data-testid="creator-supporting">
         <h2 class="section-title">{{ t('creator.fan.supportingTitle') }}</h2>
@@ -182,8 +178,14 @@ function channelLine(c: { platform: string; followers: number | null }): string 
           </div>
         </template>
         <p v-else class="mt-3 text-sm text-base-400">{{ t('creator.fan.nobody') }}</p>
+        <p v-if="me.support.lastCreatorUuid" class="mt-3 rounded-lg border-l-2 border-redstone-500 bg-base-850 px-3 py-2 text-xs text-base-400">
+          {{ sw.locked ? t('creator.fan.switchIn', { days: sw.daysLeft }, sw.daysLeft) : t('creator.fan.switchNow') }}
+        </p>
       </section>
+
+      <CreatorPartnerCard />
     </div>
+    <p class="-mt-2 text-xs text-base-400">{{ t('partner.separateHint') }}</p>
 
     <!-- Im Spiel -->
     <section class="card p-4" :aria-label="t('creator.preview.title')">

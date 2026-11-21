@@ -406,7 +406,9 @@
       "feature_unavailable": "Esto aún no está disponible: llegará pronto.",
       "hosting_maintenance": "El hosting está en mantenimiento: inténtalo más tarde.",
       "server_blocked": "El equipo de TRS ha bloqueado tu servidor.",
-      "feature_disabled": "Esta función está desactivada ahora mismo."
+      "feature_disabled": "Esta función está desactivada ahora mismo.",
+      "partner_code_used": "Este código de un solo uso ya se canjeó o está bloqueado.",
+      "partner_not_found": "Este partner no existe (o ya no existe)."
     },
     "auth": {
       "accountMismatch": "El inicio de sesión pertenece a otra cuenta: vuelve a iniciar sesión.",
@@ -1107,6 +1109,9 @@
       "unknownGame": "Este minijuego no existe.",
       "invalidRun": "Esta partida no es válida.",
       "invalidReason": "Indica un motivo breve."
+    },
+    "partner": {
+      "invalidCode": "Los códigos tienen de 4 a 32 caracteres: letras, números y guiones."
     }
   },
   "browse": {
@@ -3762,9 +3767,10 @@
     "pendingCount": "{n} capa pendiente de aprobación. | {n} capas pendientes de aprobación.",
     "redeemDialog": {
       "codeLabel": "Código",
-      "hint": "Da igual si usas mayúsculas, minúsculas o guiones.",
+      "hint": "Códigos de creador, de partner y de capa. Da igual si usas mayúsculas, minúsculas o guiones.",
       "checking": "Comprobando …",
-      "submit": "Canjear"
+      "submit": "Canjear",
+      "placeholder": "Código, p. ej. CRAFTING"
     },
     "deleteDialog": {
       "title": "¿Eliminar capa?",
@@ -7591,12 +7597,12 @@
       "creatorBadge": "Insignia de creador"
     },
     "fan": {
-      "redeemTitle": "Canjear un código de creador",
-      "codeLabel": "Código de creador",
-      "codePlaceholder": "Código, p. ej. PIXELMAUS",
+      "redeemTitle": "Canjear código",
+      "codeLabel": "Código",
+      "codePlaceholder": "Código, p. ej. PIXELMAUS o CRAFTING",
       "redeem": "Canjear",
       "redeeming": "Comprobando …",
-      "redeemHint": "Encontrarás códigos en vídeos, directos y descripciones.",
+      "redeemHint": "Aquí funcionan códigos de creador, de partner y de capa. Los códigos de creador aparecen en vídeos, directos y descripciones.",
       "invalidCode": "Los códigos de creador tienen de 5 a 20 caracteres: letras, cifras y guiones.",
       "switchIn": "Solo puedes apoyar a un creador a la vez. Podrás elegir otro en {days} día; conservas las capas de fan canjeadas. | Solo puedes apoyar a un creador a la vez. Podrás elegir otro en {days} días; conservas las capas de fan canjeadas.",
       "switchNow": "Solo puedes apoyar a un creador a la vez. Ya puedes elegir otro; conservas las capas de fan canjeadas.",
@@ -7604,7 +7610,6 @@
         "now": "Ahora apoyas a {name}.",
         "nowWithCape": "Ahora apoyas a {name}: capa de fan «{cape}» desbloqueada.",
         "capeOnly": "Capa de fan «{cape}» desbloqueada. Podrás apoyar a {name} en {days} día. | Capa de fan «{cape}» desbloqueada. Podrás apoyar a {name} en {days} días.",
-        "capeUnlocked": "Capa de fan «{cape}» desbloqueada.",
         "already": "Ya apoyas a {name}.",
         "locked": "Podrás elegir otro creador en {days} día. | Podrás elegir otro creador en {days} días."
       },
@@ -8912,6 +8917,41 @@
     },
     "quota": {
       "warn": "Tu servidor se detiene en {minutes} min: el tiempo casi se ha agotado."
+    }
+  },
+  "partner": {
+    "title": "Partner",
+    "nobody": "Todavía no tienes partner. Canjea un código de partner, por ejemplo de tu proveedor de servidores.",
+    "since": "desde el {date}",
+    "switchFrom": "otro partner a partir del {date}",
+    "switchNow": "puedes cambiar cuando quieras",
+    "end": "Dejar de apoyar",
+    "endHint": "Los cosméticos de partner se quedan.",
+    "endTitle": "¿Dejar de apoyar a {name}?",
+    "endText": "Dejarás de contar como seguidor de {name}. Los cosméticos de partner que desbloqueaste se quedan contigo.",
+    "endSwitchFrom": "Podrás elegir otro partner a partir del {date}; a {name} siempre puedes volver.",
+    "endSwitchNow": "Puedes elegir otro partner ya mismo; a {name} siempre puedes volver.",
+    "ended": "Ya no apoyas a {name}.",
+    "ownedTitle": "Tus cosméticos de partner",
+    "ownedHint": "Están en tu vestuario y se quedan aunque cambies de partner.",
+    "itemBy": "de {name}",
+    "dashboard": "Abrir panel de partner",
+    "dashboardOf": "Panel: {name}",
+    "separateHint": "Creador y partner van por separado: puedes apoyar a la vez a un creador y a un partner. Puedes cambiar de partner cada 30 días.",
+    "categories": {
+      "hosting": "Hosting",
+      "network": "Red",
+      "other": "Partner"
+    },
+    "source": "Partner: {name}",
+    "redeemed": {
+      "now": "Ahora apoyas a {name}.",
+      "already": "Ya apoyas a {name}.",
+      "locked": "Código de {name} canjeado. Podrás apoyar a otro partner a partir del {date}.",
+      "granted": "Desbloqueado: {items}."
+    },
+    "toast": {
+      "open": "Ver"
     }
   }
 }

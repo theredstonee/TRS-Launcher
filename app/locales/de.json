@@ -406,7 +406,9 @@
       "feature_unavailable": "Das ist noch nicht verfügbar – es kommt bald.",
       "hosting_maintenance": "Das Hosting wird gerade gewartet – versuch es später noch einmal.",
       "server_blocked": "Dein Server wurde vom TRS-Team gesperrt.",
-      "feature_disabled": "Diese Funktion ist gerade abgeschaltet."
+      "feature_disabled": "Diese Funktion ist gerade abgeschaltet.",
+      "partner_code_used": "Dieser Einmal-Code wurde schon eingelöst oder gesperrt.",
+      "partner_not_found": "Diesen Partner gibt es nicht (mehr)."
     },
     "auth": {
       "accountMismatch": "Die Anmeldung gehört zu einem anderen Account – bitte erneut anmelden.",
@@ -1107,6 +1109,9 @@
       "unknownGame": "Dieses Minispiel gibt es nicht.",
       "invalidRun": "Diese Partie ist ungültig.",
       "invalidReason": "Bitte gib einen kurzen Grund an."
+    },
+    "partner": {
+      "invalidCode": "Codes haben 4 bis 32 Zeichen: Buchstaben, Ziffern und Bindestriche."
     }
   },
   "browse": {
@@ -3762,9 +3767,10 @@
     "pendingCount": "{n} Umhang wartet auf Freigabe. | {n} Umhänge warten auf Freigabe.",
     "redeemDialog": {
       "codeLabel": "Code",
-      "hint": "Groß-/Kleinschreibung und Bindestriche sind egal.",
+      "hint": "Creator-, Partner- und Umhang-Codes. Groß-/Kleinschreibung und Bindestriche sind egal.",
       "checking": "Prüfe …",
-      "submit": "Einlösen"
+      "submit": "Einlösen",
+      "placeholder": "Code, z. B. CRAFTING"
     },
     "deleteDialog": {
       "title": "Umhang löschen?",
@@ -7591,12 +7597,12 @@
       "creatorBadge": "Creator-Abzeichen"
     },
     "fan": {
-      "redeemTitle": "Creator-Code einlösen",
-      "codeLabel": "Creator-Code",
-      "codePlaceholder": "Code, z. B. PIXELMAUS",
+      "redeemTitle": "Code einlösen",
+      "codeLabel": "Code",
+      "codePlaceholder": "Code, z. B. PIXELMAUS oder CRAFTING",
       "redeem": "Einlösen",
       "redeeming": "Prüfe …",
-      "redeemHint": "Codes gibt es in Videos, Streams und Beschreibungen.",
+      "redeemHint": "Creator-, Partner- und Umhang-Codes funktionieren hier. Creator-Codes gibt es in Videos, Streams und Beschreibungen.",
       "invalidCode": "Creator-Codes haben 5 bis 20 Zeichen: Buchstaben, Ziffern und Bindestriche.",
       "switchIn": "Du kannst immer nur einen Creator unterstützen. Einen anderen wählen geht wieder in {days} Tag – eingelöste Fan-Umhänge behältst du. | Du kannst immer nur einen Creator unterstützen. Einen anderen wählen geht wieder in {days} Tagen – eingelöste Fan-Umhänge behältst du.",
       "switchNow": "Du kannst immer nur einen Creator unterstützen. Einen anderen wählen geht jetzt – eingelöste Fan-Umhänge behältst du.",
@@ -7604,7 +7610,6 @@
         "now": "Du unterstützt jetzt {name}.",
         "nowWithCape": "Du unterstützt jetzt {name} – Fan-Umhang „{cape}“ freigeschaltet.",
         "capeOnly": "Fan-Umhang „{cape}“ freigeschaltet. Unterstützen kannst du {name} in {days} Tag. | Fan-Umhang „{cape}“ freigeschaltet. Unterstützen kannst du {name} in {days} Tagen.",
-        "capeUnlocked": "Fan-Umhang „{cape}“ freigeschaltet.",
         "already": "Du unterstützt {name} schon.",
         "locked": "Einen anderen Creator kannst du erst in {days} Tag wählen. | Einen anderen Creator kannst du erst in {days} Tagen wählen."
       },
@@ -8912,6 +8917,41 @@
     },
     "quota": {
       "warn": "Dein Server stoppt in {minutes} min – die Laufzeit ist fast aufgebraucht."
+    }
+  },
+  "partner": {
+    "title": "Partner",
+    "nobody": "Noch kein Partner. Löse einen Partner-Code ein, zum Beispiel von deinem Server-Hoster.",
+    "since": "seit {date}",
+    "switchFrom": "anderer Partner ab {date}",
+    "switchNow": "jederzeit wechselbar",
+    "end": "Nicht mehr unterstützen",
+    "endHint": "Partner-Kosmetik bleibt.",
+    "endTitle": "{name} nicht mehr unterstützen?",
+    "endText": "Du zählst nicht mehr als Unterstützer von {name}. Freigeschaltete Partner-Kosmetik behältst du.",
+    "endSwitchFrom": "Einen anderen Partner kannst du ab {date} wählen; {name} selbst jederzeit wieder.",
+    "endSwitchNow": "Einen anderen Partner kannst du sofort wählen; {name} selbst jederzeit wieder.",
+    "ended": "Du unterstützt {name} nicht mehr.",
+    "ownedTitle": "Deine Partner-Kosmetik",
+    "ownedHint": "Liegt in deiner Garderobe und bleibt, auch wenn du den Partner wechselst.",
+    "itemBy": "von {name}",
+    "dashboard": "Partner-Dashboard öffnen",
+    "dashboardOf": "Dashboard: {name}",
+    "separateHint": "Creator und Partner sind getrennt: Du unterstützt gleichzeitig einen Creator und einen Partner. Den Partner kannst du alle 30 Tage wechseln.",
+    "categories": {
+      "hosting": "Hosting",
+      "network": "Netzwerk",
+      "other": "Partner"
+    },
+    "source": "Partner: {name}",
+    "redeemed": {
+      "now": "Du unterstützt jetzt {name}.",
+      "already": "Du unterstützt {name} schon.",
+      "locked": "Code von {name} eingelöst. Einen anderen Partner kannst du ab {date} unterstützen.",
+      "granted": "Freigeschaltet: {items}."
+    },
+    "toast": {
+      "open": "Ansehen"
     }
   }
 }

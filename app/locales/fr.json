@@ -359,7 +359,9 @@
       "feature_unavailable": "Ce n’est pas encore disponible – ça arrive bientôt.",
       "hosting_maintenance": "L’hébergement est en maintenance – réessaie plus tard.",
       "server_blocked": "Ton serveur a été bloqué par l’équipe TRS.",
-      "feature_disabled": "Cette fonction est désactivée pour le moment."
+      "feature_disabled": "Cette fonction est désactivée pour le moment.",
+      "partner_code_used": "Ce code à usage unique a déjà été utilisé ou bloqué.",
+      "partner_not_found": "Ce partenaire n'existe pas (ou plus)."
     },
     "auth": {
       "accountMismatch": "Cette connexion appartient à un autre compte – reconnecte-toi.",
@@ -1038,6 +1040,9 @@
       "imageTooLarge": "L'image est trop lourde (2 Mo au maximum).",
       "invalidImage": "L'image de référence doit être au format PNG ou JPG.",
       "speciesLength": "Animal : 1 à {max} caractères."
+    },
+    "partner": {
+      "invalidCode": "Les codes font 4 à 32 caractères : lettres, chiffres et tirets."
     }
   },
   "browse": {
@@ -3653,9 +3658,10 @@
     "pendingCount": "{n} cape est en attente d'approbation. | {n} capes sont en attente d'approbation.",
     "redeemDialog": {
       "codeLabel": "Code",
-      "hint": "Majuscules, minuscules et tirets n'ont pas d'importance.",
+      "hint": "Codes créateur, partenaire et cape. Majuscules, minuscules et tirets n'ont pas d'importance.",
       "checking": "Vérification…",
-      "submit": "Utiliser"
+      "submit": "Utiliser",
+      "placeholder": "Code, p. ex. CRAFTING"
     },
     "deleteDialog": {
       "title": "Supprimer la cape ?",
@@ -8106,6 +8112,41 @@
     },
     "quota": {
       "warn": "Ton serveur s’arrête dans {minutes} min – le temps est presque épuisé."
+    }
+  },
+  "partner": {
+    "title": "Partenaire",
+    "nobody": "Pas encore de partenaire. Utilise un code partenaire, par exemple de ton hébergeur de serveur.",
+    "since": "depuis le {date}",
+    "switchFrom": "autre partenaire à partir du {date}",
+    "switchNow": "tu peux changer à tout moment",
+    "end": "Ne plus soutenir",
+    "endHint": "Tes cosmétiques partenaire restent.",
+    "endTitle": "Ne plus soutenir {name} ?",
+    "endText": "Tu ne comptes plus comme soutien de {name}. Les cosmétiques partenaire débloqués restent à toi.",
+    "endSwitchFrom": "Tu pourras choisir un autre partenaire à partir du {date} ; {name} à tout moment.",
+    "endSwitchNow": "Tu peux choisir un autre partenaire tout de suite ; {name} à tout moment.",
+    "ended": "Tu ne soutiens plus {name}.",
+    "ownedTitle": "Tes cosmétiques partenaire",
+    "ownedHint": "Ils sont dans ta garde-robe et restent même si tu changes de partenaire.",
+    "itemBy": "de {name}",
+    "dashboard": "Ouvrir le tableau de bord partenaire",
+    "dashboardOf": "Tableau de bord : {name}",
+    "separateHint": "Créateur et partenaire sont séparés : tu peux soutenir un créateur et un partenaire en même temps. Tu peux changer de partenaire tous les 30 jours.",
+    "categories": {
+      "hosting": "Hébergement",
+      "network": "Réseau",
+      "other": "Partenaire"
+    },
+    "source": "Partenaire : {name}",
+    "redeemed": {
+      "now": "Tu soutiens maintenant {name}.",
+      "already": "Tu soutiens déjà {name}.",
+      "locked": "Code de {name} utilisé. Tu pourras soutenir un autre partenaire à partir du {date}.",
+      "granted": "Débloqué : {items}."
+    },
+    "toast": {
+      "open": "Voir"
     }
   }
 }

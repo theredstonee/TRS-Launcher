@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { TrsCape, TrsCosmeticSlot } from '~/utils/trs'
 import { capeFilters, capeOrigin, capeSorts, filterCapes, type CapeFilter, type CapeSort } from '~/utils/capeFilter'
+import { normalizeRedeemCode } from '~/utils/partner'
 
 // TRS-Umhänge auf der Skins-Seite: Katalog mit Sperr-Status, Vorschau in der
 // großen 3D-Ansicht der Seite (per `preview`), Anlegen/Ablegen, Code einlösen,
@@ -64,6 +65,7 @@ async function load() {
     if (seq !== loadSeq) return
     capes.value = list
     offline.value = false
+    usePartnerStore().ensure()
     // Die Vorschau zeigt die aktuellen Daten (z. B. nach einer Freigabe).
     if (props.previewId) emit('preview', list.find((c) => c.id === props.previewId) ?? null)
   } catch (e) {
@@ -140,54 +142,40 @@ function startRedeem() {
 // Die Kopf-Kosmetik-Liste öffnet denselben Dialog („Code einlösen“ bei gesperrten Teilen).
 defineExpose({ startRedeem })
 
+const codeRedeem = useCodeRedeem()
+
 async function redeem() {
-  // Creator-Codes (Muster mit Bindestrich, §35.1) gehen ans Creator-Programm, alles andere ist ein Umhang-Code.
-  if (isCreatorCode(code.value)) {
-    codeError.value = null
-    await run('redeem', async () => {
-      try {
-        const result = await useCreatorStore().redeem(code.value.trim().toUpperCase())
-        redeeming.value = false
-        await load()
-        toasts.ok(
-          result.supportChanged
-            ? t('creator.fan.redeemed.now', { name: result.creator.name })
-            : result.fanCapeGranted
-              ? t('creator.fan.redeemed.capeUnlocked', { cape: result.creator.fanCape?.name ?? '' })
-              : t('creator.fan.redeemed.already', { name: result.creator.name }),
-          { label: t('creator.toast.open'), run: () => void navigateTo('/creator') },
-        )
-      } catch (e) {
-        codeError.value = errorMessage(e)
-      }
-    })
-    return
-  }
-  const parsed = trsRedeemCodeSchema.safeParse(code.value)
-  if (!parsed.success) {
-    codeError.value = firstIssue(parsed.error)
+  // Ein Feld für Creator-, Partner- und Umhang-Codes (§44.2) – welche Art, entscheidet der Server.
+  const c = normalizeRedeemCode(code.value)
+  if (!c) {
+    codeError.value = t('errors.partner.invalidCode')
     return
   }
   codeError.value = null
   await run('redeem', async () => {
     try {
-      const result = await backend.trs.redeem(parsed.data)
+      const { outcome, text } = await codeRedeem.redeem(c)
       redeeming.value = false
       await load()
-      if (result.kind === 'cosmetic') {
-        // Kopf-Kosmetik-Liste neu laden; neue Kopf-Teile gleich zum Aufsetzen anbieten.
-        trs.capesRevision++
-        if (result.wearableHat && result.cosmeticId && !result.alreadyOwned) {
-          hatOffer.value = { id: result.cosmeticId, name: result.name, slot: result.slot ?? 'hat' }
-          return
-        }
+      if (outcome.kind === 'creator') {
+        toasts.ok(text, { label: t('creator.toast.open'), run: () => void navigateTo('/creator') })
+        return
       }
-      toasts.ok(
-        result.alreadyOwned
-          ? t('capes.toasts.alreadyOwned', { name: result.name })
-          : t('capes.toasts.unlocked', { name: result.name }),
-      )
-      const cape = capes.value?.find((c) => c.id === result.capeId)
+      if (outcome.kind === 'partner') {
+        toasts.ok(text, { label: t('partner.toast.open'), run: () => void navigateTo('/creator') })
+        const first = outcome.result.granted.capes[0]
+        const cape = first && capes.value?.find((x) => x.id === first.capeId)
+        if (cape) emit('preview', cape)
+        return
+      }
+      const result = outcome.result
+      // Neue Kopf-Teile gleich zum Aufsetzen anbieten.
+      if (result.kind === 'cosmetic' && result.wearableHat && result.cosmeticId && !result.alreadyOwned) {
+        hatOffer.value = { id: result.cosmeticId, name: result.name, slot: result.slot ?? 'hat' }
+        return
+      }
+      toasts.ok(text)
+      const cape = capes.value?.find((x) => x.id === result.capeId)
       if (cape) emit('preview', cape)
     } catch (e) {
       // Im Dialog anzeigen statt als Toast – der Code steht ja noch da.
@@ -249,7 +237,14 @@ async function confirmDelete() {
   })
 }
 
+// Herkunft „Partner: <Name>“ für Partner-Umhänge (§44.11).
+const partner = usePartnerStore()
+function unlockLabel(cape: TrsCape): string {
+  return partner.sourceLabel('cape', cape.id) ?? trsUnlockLabel(cape)
+}
+
 function lockClass(cape: TrsCape) {
+  if (partner.sourceLabel('cape', cape.id)) return 'bg-[#10324a]/70 text-[#8fd3ff]'
   if (cape.shared) return 'bg-redstone-900/30 text-redstone-200'
   if (cape.kind === 'upload') return 'bg-base-800 text-base-200'
   if (cape.unlock === 'free') return 'bg-ok/10 text-ok'
@@ -335,7 +330,7 @@ function lockClass(cape: TrsCape) {
               </span>
               <span class="w-full truncate text-center text-xs">{{ cape.name }}</span>
               <span class="flex flex-wrap justify-center gap-1">
-                <span class="badge px-1.5 py-0 text-[10px]" :class="lockClass(cape)">{{ trsUnlockLabel(cape) }}</span>
+                <span class="badge px-1.5 py-0 text-[10px]" :class="lockClass(cape)">{{ unlockLabel(cape) }}</span>
                 <span v-if="cape.frames > 1" class="badge bg-base-800 px-1.5 py-0 text-[10px] text-base-200">{{ t('capes.animated') }}</span>
               </span>
               <span v-if="cape.active" class="text-[10px] text-ok">{{ t('capes.worn') }}</span>
@@ -501,7 +496,7 @@ function lockClass(cape: TrsCape) {
         v-model="code"
         class="field font-mono tracking-wider uppercase"
         maxlength="64"
-        placeholder="XXXXX-XXXXX-XXXXX-XXXXX"
+        :placeholder="t('capes.redeemDialog.placeholder')"
         autocomplete="off"
         spellcheck="false"
         autofocus

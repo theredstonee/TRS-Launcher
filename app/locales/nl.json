@@ -359,7 +359,9 @@
       "feature_unavailable": "Dit is nog niet beschikbaar – het komt binnenkort.",
       "hosting_maintenance": "Hosting is in onderhoud – probeer het later opnieuw.",
       "server_blocked": "Je server is door het TRS-team geblokkeerd.",
-      "feature_disabled": "Deze functie is op dit moment uitgeschakeld."
+      "feature_disabled": "Deze functie is op dit moment uitgeschakeld.",
+      "partner_code_used": "Deze eenmalige code is al ingewisseld of geblokkeerd.",
+      "partner_not_found": "Deze partner bestaat niet (meer)."
     },
     "auth": {
       "accountMismatch": "Deze login hoort bij een ander account – log opnieuw in.",
@@ -1038,6 +1040,9 @@
       "imageTooLarge": "De afbeelding is te groot (maximaal 2 MB).",
       "invalidImage": "De voorbeeldafbeelding moet een PNG of JPG zijn.",
       "speciesLength": "Dier: 1 tot {max} tekens."
+    },
+    "partner": {
+      "invalidCode": "Codes hebben 4 tot 32 tekens: letters, cijfers en streepjes."
     }
   },
   "browse": {
@@ -3653,9 +3658,10 @@
     "pendingCount": "{n} cape wacht op goedkeuring. | {n} capes wachten op goedkeuring.",
     "redeemDialog": {
       "codeLabel": "Code",
-      "hint": "Hoofdletters, kleine letters en streepjes maken niet uit.",
+      "hint": "Creator-, partner- en capecodes. Hoofdletters, kleine letters en streepjes maken niet uit.",
       "checking": "Controleren …",
-      "submit": "Inwisselen"
+      "submit": "Inwisselen",
+      "placeholder": "Code, bijv. CRAFTING"
     },
     "deleteDialog": {
       "title": "Cape verwijderen?",
@@ -8106,6 +8112,41 @@
     },
     "quota": {
       "warn": "Je server stopt over {minutes} min – de looptijd is bijna op."
+    }
+  },
+  "partner": {
+    "title": "Partner",
+    "nobody": "Nog geen partner. Wissel een partnercode in, bijvoorbeeld van je serverhost.",
+    "since": "sinds {date}",
+    "switchFrom": "andere partner vanaf {date}",
+    "switchNow": "je kunt altijd wisselen",
+    "end": "Niet meer steunen",
+    "endHint": "Je partnercosmetica blijven.",
+    "endTitle": "{name} niet meer steunen?",
+    "endText": "Je telt niet meer als supporter van {name}. Ontgrendelde partnercosmetica houd je.",
+    "endSwitchFrom": "Een andere partner kun je vanaf {date} kiezen; {name} zelf altijd weer.",
+    "endSwitchNow": "Een andere partner kun je meteen kiezen; {name} zelf altijd weer.",
+    "ended": "Je steunt {name} niet meer.",
+    "ownedTitle": "Je partnercosmetica",
+    "ownedHint": "Ze staan in je garderobe en blijven, ook als je van partner wisselt.",
+    "itemBy": "van {name}",
+    "dashboard": "Partnerdashboard openen",
+    "dashboardOf": "Dashboard: {name}",
+    "separateHint": "Creator en partner staan los van elkaar: je kunt tegelijk één creator en één partner steunen. Van partner wisselen kan elke 30 dagen.",
+    "categories": {
+      "hosting": "Hosting",
+      "network": "Netwerk",
+      "other": "Partner"
+    },
+    "source": "Partner: {name}",
+    "redeemed": {
+      "now": "Je steunt nu {name}.",
+      "already": "Je steunt {name} al.",
+      "locked": "Code van {name} ingewisseld. Een andere partner kun je vanaf {date} steunen.",
+      "granted": "Ontgrendeld: {items}."
+    },
+    "toast": {
+      "open": "Bekijken"
     }
   }
 }

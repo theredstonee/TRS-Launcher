@@ -406,7 +406,9 @@
       "feature_unavailable": "This isn’t available yet – it’s coming soon.",
       "hosting_maintenance": "Hosting is under maintenance – please try again later.",
       "server_blocked": "Your server was blocked by the TRS team.",
-      "feature_disabled": "This function is switched off right now."
+      "feature_disabled": "This function is switched off right now.",
+      "partner_code_used": "This one-time code has already been redeemed or blocked.",
+      "partner_not_found": "This partner doesn't exist (anymore)."
     },
     "auth": {
       "accountMismatch": "This sign-in belongs to a different account – please sign in again.",
@@ -1107,6 +1109,9 @@
       "unknownGame": "This minigame doesn't exist.",
       "invalidRun": "This run is invalid.",
       "invalidReason": "Please give a short reason."
+    },
+    "partner": {
+      "invalidCode": "Codes have 4 to 32 characters: letters, digits and hyphens."
     }
   },
   "browse": {
@@ -3762,9 +3767,10 @@
     "pendingCount": "{n} cape is awaiting approval. | {n} capes are awaiting approval.",
     "redeemDialog": {
       "codeLabel": "Code",
-      "hint": "Upper/lower case and hyphens don't matter.",
+      "hint": "Creator, partner and cape codes. Upper/lower case and hyphens don't matter.",
       "checking": "Checking …",
-      "submit": "Redeem"
+      "submit": "Redeem",
+      "placeholder": "Code, e.g. CRAFTING"
     },
     "deleteDialog": {
       "title": "Delete cape?",
@@ -7591,12 +7597,12 @@
       "creatorBadge": "Creator badge"
     },
     "fan": {
-      "redeemTitle": "Redeem a creator code",
-      "codeLabel": "Creator code",
-      "codePlaceholder": "Code, e.g. PIXELMAUS",
+      "redeemTitle": "Redeem code",
+      "codeLabel": "Code",
+      "codePlaceholder": "Code, e.g. PIXELMAUS or CRAFTING",
       "redeem": "Redeem",
       "redeeming": "Checking …",
-      "redeemHint": "Codes are in videos, streams and descriptions.",
+      "redeemHint": "Creator, partner and cape codes all work here. Creator codes are in videos, streams and descriptions.",
       "invalidCode": "Creator codes have 5 to 20 characters: letters, digits and dashes.",
       "switchIn": "You can only support one creator at a time. You can pick another one in {days} day – fan capes you unlocked stay. | You can only support one creator at a time. You can pick another one in {days} days – fan capes you unlocked stay.",
       "switchNow": "You can only support one creator at a time. You can pick another one now – fan capes you unlocked stay.",
@@ -7604,7 +7610,6 @@
         "now": "You now support {name}.",
         "nowWithCape": "You now support {name} – fan cape “{cape}” unlocked.",
         "capeOnly": "Fan cape “{cape}” unlocked. You can support {name} in {days} day. | Fan cape “{cape}” unlocked. You can support {name} in {days} days.",
-        "capeUnlocked": "Fan cape “{cape}” unlocked.",
         "already": "You already support {name}.",
         "locked": "You can pick another creator in {days} day. | You can pick another creator in {days} days."
       },
@@ -8912,6 +8917,41 @@
     },
     "quota": {
       "warn": "Your server stops in {minutes} min – its runtime is almost used up."
+    }
+  },
+  "partner": {
+    "title": "Partner",
+    "nobody": "No partner yet. Redeem a partner code, for example from your server host.",
+    "since": "since {date}",
+    "switchFrom": "another partner from {date}",
+    "switchNow": "you can switch any time",
+    "end": "Stop supporting",
+    "endHint": "Your partner cosmetics stay.",
+    "endTitle": "Stop supporting {name}?",
+    "endText": "You will no longer count as a supporter of {name}. Partner cosmetics you unlocked stay with you.",
+    "endSwitchFrom": "You can choose another partner from {date}; {name} itself any time.",
+    "endSwitchNow": "You can choose another partner right away; {name} itself any time.",
+    "ended": "You no longer support {name}.",
+    "ownedTitle": "Your partner cosmetics",
+    "ownedHint": "They are in your wardrobe and stay even if you switch partners.",
+    "itemBy": "from {name}",
+    "dashboard": "Open partner dashboard",
+    "dashboardOf": "Dashboard: {name}",
+    "separateHint": "Creator and partner are separate: you can support one creator and one partner at the same time. You can switch partners every 30 days.",
+    "categories": {
+      "hosting": "Hosting",
+      "network": "Network",
+      "other": "Partner"
+    },
+    "source": "Partner: {name}",
+    "redeemed": {
+      "now": "You now support {name}.",
+      "already": "You already support {name}.",
+      "locked": "Code from {name} redeemed. You can switch to another partner from {date}.",
+      "granted": "Unlocked: {items}."
+    },
+    "toast": {
+      "open": "View"
     }
   }
 }

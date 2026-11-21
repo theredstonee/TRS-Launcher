@@ -80,6 +80,7 @@ export const useLiveStore = defineStore('live', () => {
       useAchievementsStore().data ? useAchievementsStore().load(true) : Promise.resolve(),
       useRemoteStore().pcsLoaded ? useRemoteStore().loadPcs() : Promise.resolve(),
       useCreatorStore().me ? useCreatorStore().load() : Promise.resolve(),
+      usePartnerStore().loaded ? usePartnerStore().load() : Promise.resolve(),
       useHalloweenStore().state ? useHalloweenStore().load() : Promise.resolve(),
     ])
   }
@@ -221,6 +222,12 @@ export const useLiveStore = defineStore('live', () => {
         useCreatorStore().onLiveEvent(e)
         // Fans/Status ändern die Pinguin-Stufe (Anhang D): Kosmetik-Liste samt Anzahl neu laden.
         if (e.type === 'creator_updated' || e.type === 'creator_milestone') useTrsStore().capesRevision++
+        return
+      case 'partner_support_changed':
+      case 'partner_updated':
+        // Partner-Programm (§44.8): eigener Partner oder Mitgliedschaft geändert.
+        usePartnerStore().onLiveEvent(e)
+        if (e.type === 'partner_support_changed') useTrsStore().capesRevision++
         return
       case 'remote_command':
       case 'remote_command_update':

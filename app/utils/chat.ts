@@ -12,6 +12,7 @@ import { issueEventSchemas } from './issues'
 import { achievementEventSchemas } from './achievements'
 import { remoteEventSchemas } from './remote'
 import { creatorEventSchemas } from './creator'
+import { partnerEventSchemas } from './partner'
 import { halloweenEventSchemas } from './halloween'
 
 // Chat (Sozial): Schemas für alles, was der Kern liefert (wird beim Empfang
@@ -273,6 +274,7 @@ export const liveEventSchema = z.discriminatedUnion('type', [
   ...achievementEventSchemas,
   ...remoteEventSchemas,
   ...creatorEventSchemas,
+  ...partnerEventSchemas,
   ...halloweenEventSchemas,
 ])
 

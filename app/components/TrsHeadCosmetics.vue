@@ -57,6 +57,7 @@ const petCountLabel = computed(() => {
 })
 
 async function load() {
+  usePartnerStore().ensure()
   if (!trs.enabled || !accounts.active) {
     items.value = null
     return
@@ -129,7 +130,11 @@ function cardOf(item: TrsHeadCosmetic): string | null {
   return (props.night ? item.cardNight : null) ?? item.card ?? item.cardNight
 }
 
+const partner = usePartnerStore()
+
 function unlockLabel(item: TrsHeadCosmetic): string {
+  const from = partner.sourceLabel('cosmetic', item.id)
+  if (from) return from
   switch (item.unlock) {
     case 'free':
       return t('trs.unlock.free')
@@ -151,6 +156,7 @@ function unlockLabel(item: TrsHeadCosmetic): string {
 }
 
 function lockClass(item: TrsHeadCosmetic) {
+  if (partner.sourceLabel('cosmetic', item.id)) return 'bg-[#10324a]/70 text-[#8fd3ff]'
   if (item.unlock === 'free') return 'bg-ok/10 text-ok'
   if (item.unlock === 'code') return 'bg-lamp-900/60 text-lamp-300'
   if (item.unlock === 'achievement') return 'bg-base-800 text-lamp-200'

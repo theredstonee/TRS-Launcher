@@ -359,7 +359,9 @@
       "feature_unavailable": "Isso ainda não está disponível – chega em breve.",
       "hosting_maintenance": "A hospedagem está em manutenção – tente mais tarde.",
       "server_blocked": "Seu servidor foi bloqueado pela equipe TRS.",
-      "feature_disabled": "Esta função está desativada no momento."
+      "feature_disabled": "Esta função está desativada no momento.",
+      "partner_code_used": "Este código de uso único já foi resgatado ou bloqueado.",
+      "partner_not_found": "Este parceiro não existe (mais)."
     },
     "auth": {
       "accountMismatch": "Este login pertence a outra conta – entre novamente.",
@@ -1038,6 +1040,9 @@
       "imageTooLarge": "A imagem é grande demais (no máximo 2 MB).",
       "invalidImage": "A imagem de referência precisa ser PNG ou JPG.",
       "speciesLength": "Animal: de 1 a {max} caracteres."
+    },
+    "partner": {
+      "invalidCode": "Os códigos têm de 4 a 32 caracteres: letras, números e hifens."
     }
   },
   "browse": {
@@ -3653,9 +3658,10 @@
     "pendingCount": "{n} capa aguardando aprovação. | {n} capas aguardando aprovação.",
     "redeemDialog": {
       "codeLabel": "Código",
-      "hint": "Maiúsculas/minúsculas e hifens não importam.",
+      "hint": "Códigos de criador, de parceiro e de capa. Maiúsculas/minúsculas e hifens não importam.",
       "checking": "Verificando …",
-      "submit": "Resgatar"
+      "submit": "Resgatar",
+      "placeholder": "Código, p. ex. CRAFTING"
     },
     "deleteDialog": {
       "title": "Excluir capa?",
@@ -8106,6 +8112,41 @@
     },
     "quota": {
       "warn": "Seu servidor para em {minutes} min – o tempo está quase acabando."
+    }
+  },
+  "partner": {
+    "title": "Parceiro",
+    "nobody": "Nenhum parceiro ainda. Resgate um código de parceiro, por exemplo da sua hospedagem de servidores.",
+    "since": "desde {date}",
+    "switchFrom": "outro parceiro a partir de {date}",
+    "switchNow": "você pode trocar quando quiser",
+    "end": "Parar de apoiar",
+    "endHint": "Os cosméticos de parceiro ficam.",
+    "endTitle": "Parar de apoiar {name}?",
+    "endText": "Você deixa de contar como apoiador de {name}. Os cosméticos de parceiro desbloqueados continuam com você.",
+    "endSwitchFrom": "Você pode escolher outro parceiro a partir de {date}; {name} a qualquer momento.",
+    "endSwitchNow": "Você pode escolher outro parceiro agora mesmo; {name} a qualquer momento.",
+    "ended": "Você não apoia mais {name}.",
+    "ownedTitle": "Seus cosméticos de parceiro",
+    "ownedHint": "Ficam no seu guarda-roupa e continuam mesmo se você trocar de parceiro.",
+    "itemBy": "de {name}",
+    "dashboard": "Abrir painel do parceiro",
+    "dashboardOf": "Painel: {name}",
+    "separateHint": "Criador e parceiro são separados: você pode apoiar um criador e um parceiro ao mesmo tempo. Dá para trocar de parceiro a cada 30 dias.",
+    "categories": {
+      "hosting": "Hospedagem",
+      "network": "Rede",
+      "other": "Parceiro"
+    },
+    "source": "Parceiro: {name}",
+    "redeemed": {
+      "now": "Agora você apoia {name}.",
+      "already": "Você já apoia {name}.",
+      "locked": "Código de {name} resgatado. Você pode apoiar outro parceiro a partir de {date}.",
+      "granted": "Desbloqueado: {items}."
+    },
+    "toast": {
+      "open": "Ver"
     }
   }
 }

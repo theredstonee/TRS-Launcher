@@ -359,7 +359,9 @@
       "feature_unavailable": "To jeszcze nie jest dostępne – pojawi się wkrótce.",
       "hosting_maintenance": "Hosting jest w konserwacji – spróbuj później.",
       "server_blocked": "Twój serwer został zablokowany przez zespół TRS.",
-      "feature_disabled": "Ta funkcja jest teraz wyłączona."
+      "feature_disabled": "Ta funkcja jest teraz wyłączona.",
+      "partner_code_used": "Ten jednorazowy kod został już wykorzystany lub zablokowany.",
+      "partner_not_found": "Ten partner nie istnieje (już)."
     },
     "auth": {
       "accountMismatch": "To logowanie należy do innego konta – zaloguj się ponownie.",
@@ -1038,6 +1040,9 @@
       "imageTooLarge": "Obraz jest za duży (maksymalnie 2 MB).",
       "invalidImage": "Obraz poglądowy musi być w formacie PNG lub JPG.",
       "speciesLength": "Zwierzę: od 1 do {max} znaków."
+    },
+    "partner": {
+      "invalidCode": "Kody mają od 4 do 32 znaków: litery, cyfry i myślniki."
     }
   },
   "browse": {
@@ -3653,9 +3658,10 @@
     "pendingCount": "{n} peleryna czeka na zatwierdzenie. | {n} peleryny czekają na zatwierdzenie. | {n} peleryn czeka na zatwierdzenie.",
     "redeemDialog": {
       "codeLabel": "Kod",
-      "hint": "Wielkość liter i myślniki nie mają znaczenia.",
+      "hint": "Kody twórców, partnerów i peleryn. Wielkość liter i myślniki nie mają znaczenia.",
       "checking": "Sprawdzanie …",
-      "submit": "Wykorzystaj"
+      "submit": "Wykorzystaj",
+      "placeholder": "Kod, np. CRAFTING"
     },
     "deleteDialog": {
       "title": "Usunąć pelerynę?",
@@ -8106,6 +8112,41 @@
     },
     "quota": {
       "warn": "Twój serwer zatrzyma się za {minutes} min – czas działania prawie się skończył."
+    }
+  },
+  "partner": {
+    "title": "Partner",
+    "nobody": "Nie masz jeszcze partnera. Wykorzystaj kod partnera, np. od swojego hostingu serwerów.",
+    "since": "od {date}",
+    "switchFrom": "inny partner od {date}",
+    "switchNow": "możesz zmienić w każdej chwili",
+    "end": "Przestań wspierać",
+    "endHint": "Kosmetyki partnera zostają.",
+    "endTitle": "Przestać wspierać {name}?",
+    "endText": "Nie będziesz już liczony jako wspierający {name}. Odblokowane kosmetyki partnera zostają u ciebie.",
+    "endSwitchFrom": "Innego partnera możesz wybrać od {date}; {name} w każdej chwili.",
+    "endSwitchNow": "Innego partnera możesz wybrać od razu; {name} w każdej chwili.",
+    "ended": "Nie wspierasz już {name}.",
+    "ownedTitle": "Twoje kosmetyki partnera",
+    "ownedHint": "Są w twojej garderobie i zostają, nawet gdy zmienisz partnera.",
+    "itemBy": "od {name}",
+    "dashboard": "Otwórz panel partnera",
+    "dashboardOf": "Panel: {name}",
+    "separateHint": "Twórca i partner są osobno: możesz jednocześnie wspierać jednego twórcę i jednego partnera. Partnera możesz zmieniać co 30 dni.",
+    "categories": {
+      "hosting": "Hosting",
+      "network": "Sieć",
+      "other": "Partner"
+    },
+    "source": "Partner: {name}",
+    "redeemed": {
+      "now": "Wspierasz teraz {name}.",
+      "already": "Już wspierasz {name}.",
+      "locked": "Kod od {name} wykorzystany. Innego partnera możesz wspierać od {date}.",
+      "granted": "Odblokowano: {items}."
+    },
+    "toast": {
+      "open": "Zobacz"
     }
   }
 }
