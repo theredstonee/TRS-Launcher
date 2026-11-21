@@ -2742,5 +2742,11 @@
   "setting.waypoints.sort": "Volgorde van de lijst",
   "setting.waypoints.sort.distance": "Afstand",
   "setting.waypoints.sort.name": "Naam",
-  "setting.waypoints.sort.created": "Nieuwste"
+  "setting.waypoints.sort.created": "Nieuwste",
+  "setting.trsOnline.showPartnerServers": "Partnerservers in de serverlijst",
+  "menus.partners.title": "Partnerservers",
+  "menus.partners.hide": "verbergen",
+  "menus.partners.own": "Jouw servers",
+  "menus.partners.tag": "PARTNER",
+  "menus.partners.join": "Joinen"
 }

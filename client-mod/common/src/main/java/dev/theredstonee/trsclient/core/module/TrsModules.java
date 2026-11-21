@@ -351,6 +351,8 @@ public final class TrsModules {
 	public final BoolSetting trsCosmetics;
 	/** TRS-Client-Einstellungen mit dem TRS-Konto synchronisieren (bleibt selbst lokal, siehe core.sync). */
 	public final BoolSetting syncClient;
+	/** Partner-Server über den eigenen Servern der Mehrspieler-Liste (API.md §44.10). */
+	public final BoolSetting showPartnerServers;
 	public final ChoiceSetting<CapeSettings.Style> capeStyle;
 	public final ChoiceSetting<CapeSettings.Wind> capeWindMode;
 	public final NumberSetting capeWind;
@@ -964,6 +966,7 @@ public final class TrsModules {
 		fanSymbolTab = trsOnline.add(new BoolSetting("fanSymbolTab", "Fan symbols and creator stars in the tab list", true));
 		trsCapes = trsOnline.add(new BoolSetting("capes", "Show TRS capes", true));
 		trsCosmetics = trsOnline.add(new BoolSetting("cosmetics", "Show TRS cosmetics (hats)", true));
+		showPartnerServers = trsOnline.add(new BoolSetting("showPartnerServers", "Partner servers in the server list", true));
 		syncClient = trsOnline.add(new BoolSetting("sync", "Sync with TRS account", true));
 		capeStyle = capePhysics.add(new ChoiceSetting<>("style", "Style", CapeSettings.Style.class, CapeSettings.Style.SMOOTH));
 		capeWindMode = capePhysics.add(new ChoiceSetting<>("windMode", "Wind", CapeSettings.Wind.class, CapeSettings.Wind.WAVES));

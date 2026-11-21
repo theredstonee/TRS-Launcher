@@ -2742,5 +2742,11 @@
   "setting.waypoints.sort": "List order",
   "setting.waypoints.sort.distance": "Distance",
   "setting.waypoints.sort.name": "Name",
-  "setting.waypoints.sort.created": "Newest"
+  "setting.waypoints.sort.created": "Newest",
+  "setting.trsOnline.showPartnerServers": "Partner servers in the server list",
+  "menus.partners.title": "Partner servers",
+  "menus.partners.hide": "hide",
+  "menus.partners.own": "Your servers",
+  "menus.partners.tag": "PARTNER",
+  "menus.partners.join": "Join"
 }

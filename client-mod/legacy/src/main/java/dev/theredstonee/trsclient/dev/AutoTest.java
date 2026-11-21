@@ -135,6 +135,11 @@ public final class AutoTest {
 			MenusTest.install();
 			return;
 		}
+		// -PtrsAutotestOnly=partnerservers: Partner-Server in der Serverliste (mit scripts/mock-partner-api.mjs)
+		if ("partnerservers".equals(System.getProperty("trsclient.autotest.only"))) {
+			PartnerServersTest.install();
+			return;
+		}
 		// -PtrsAutotestOnly=halloween: Halloween 2026 (Startbildschirm, Seite Halloween, Mondlauf, Spuk-Effekte, Jumpscares)
 		if ("halloween".equals(System.getProperty("trsclient.autotest.only"))) {
 			HalloweenTest.install();

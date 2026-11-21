@@ -2742,5 +2742,11 @@
   "setting.waypoints.sort": "Liste sırası",
   "setting.waypoints.sort.distance": "Mesafe",
   "setting.waypoints.sort.name": "Ad",
-  "setting.waypoints.sort.created": "En yeni"
+  "setting.waypoints.sort.created": "En yeni",
+  "setting.trsOnline.showPartnerServers": "Sunucu listesinde partner sunucuları",
+  "menus.partners.title": "Partner sunucuları",
+  "menus.partners.hide": "gizle",
+  "menus.partners.own": "Sunucuların",
+  "menus.partners.tag": "PARTNER",
+  "menus.partners.join": "Katıl"
 }

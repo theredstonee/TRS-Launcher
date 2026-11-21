@@ -66,7 +66,7 @@ class IntroLogicTest {
 		TrsModules again = new TrsModules();
 		again.registry.apply(saved);
 		assertFalse(again.clientState.news().hasNew(again.trsOnline));
-		assertEquals(Arrays.asList("trsOnline.fanSymbolNametag", "trsOnline.fanSymbolTab", "trsOnline.sync"),
+		assertEquals(Arrays.asList("trsOnline.fanSymbolNametag", "trsOnline.fanSymbolTab", "trsOnline.showPartnerServers", "trsOnline.sync"),
 				saved.clientState.newSeen, "alle neuen Einstellungen der Seite gelten als gesehen");
 	}
 
