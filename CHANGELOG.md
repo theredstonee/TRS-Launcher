@@ -28,7 +28,11 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
-## Unreleased
+## 0.37.1 – 2026-11-22 – Partner Up Fix | Feinschliff
+<!-- banner: accent=#36b4ff motif=/news/0.37.1/banner.png -->
+<!-- shots:
+/news/0.37.1/titlebar.png | The title bar, just the launcher name | Die Titelleiste, nur mit dem Launcher-Namen
+-->
 
 ### English
 - **The pumpkin and bat next to "TRS Launcher" in the title bar are gone.** They no longer show up there during the Halloween event either.
