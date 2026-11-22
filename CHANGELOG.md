@@ -28,6 +28,14 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **The pumpkin and bat next to "TRS Launcher" in the title bar are gone.** They no longer show up there during the Halloween event either.
+
+### Deutsch
+- **Kürbis und Fledermaus neben „TRS Launcher“ in der Titelleiste sind weg.** Auch während des Halloween-Events erscheinen sie dort nicht mehr.
+
 ## 0.37.0 – 2026-11-22 – Partner Up | Partner an Bord
 <!-- banner: accent=#36b4ff motif=/news/0.37.0/banner.png -->
 <!-- shots:

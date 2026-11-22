@@ -47,11 +47,7 @@ async function toggleMaximize() {
     </svg>
     <div data-tauri-drag-region class="relative z-[1] flex items-center gap-2 text-base-200">
       <img src="/icon.png" alt="" class="pointer-events-none size-4 [image-rendering:pixelated]" />
-      <template v-if="events.lookHalloween">
-        <HalloweenPixelSprite name="pumpkin" class="pumpkin" />
-        <HalloweenPixelSprite name="moonbat" class="moonbat" />
-      </template>
-      <PixelSnowflake v-else-if="design === 'winter'" />
+      <PixelSnowflake v-if="design === 'winter'" />
       <PixelFoxMark v-else-if="design === 'fox'" />
       <span data-tauri-drag-region class="display text-[13px] leading-none">TRS Launcher</span>
     </div>
@@ -130,19 +126,6 @@ async function toggleMaximize() {
   pointer-events: none;
   color: var(--color-base-200);
   opacity: 0.42;
-}
-.pumpkin {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-  pointer-events: none;
-  filter: drop-shadow(0 0 4px rgba(224, 138, 60, 0.6));
-}
-.moonbat {
-  width: 18px;
-  height: 16px;
-  flex-shrink: 0;
-  pointer-events: none;
 }
 .web-corner {
   position: relative;
