@@ -28,6 +28,14 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
+## Unreleased
+
+### English
+- **TRS Client: no more Halloween badges in front of names.** The pumpkin ("Pumpkin hunter 2026") and the moon with bat no longer show up in the tab list or above heads.
+
+### Deutsch
+- **TRS Client: keine Halloween-Abzeichen mehr vor Namen.** Der Kürbis („Kürbisjäger 2026“) und der Mond mit Fledermaus erscheinen nicht mehr in der Tab-Liste und über Köpfen.
+
 ## 0.37.1 – 2026-11-22 – Partner Up Fix | Feinschliff
 <!-- banner: accent=#36b4ff motif=/news/0.37.1/banner.png -->
 <!-- shots:

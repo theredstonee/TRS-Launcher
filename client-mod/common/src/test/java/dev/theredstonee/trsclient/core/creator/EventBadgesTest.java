@@ -31,9 +31,9 @@ class EventBadgesTest {
 	}
 
 	@Test
-	void pumpkinHunterWinsOverHalloween() {
-		assertEquals("pumpkinhunter2026", EventBadges.pick(Arrays.asList("halloween2026", "pumpkinhunter2026")));
-		assertEquals("halloween2026", EventBadges.pick(Arrays.asList("founder", "halloween2026")));
+	void halloweenBadgesAreNoLongerShown() {
+		assertNull(EventBadges.pick(Arrays.asList("halloween2026", "pumpkinhunter2026")));
+		assertNull(EventBadges.pick(Arrays.asList("founder", "halloween2026")));
 		assertNull(EventBadges.pick(Collections.singletonList("founder")));
 		assertNull(EventBadges.pick(null));
 	}

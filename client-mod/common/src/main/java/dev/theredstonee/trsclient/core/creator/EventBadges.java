@@ -19,8 +19,11 @@ import java.util.Map;
  * @param <T> Textur-Kennung der jeweiligen Minecraft-Version
  */
 public final class EventBadges<T> {
-	/** Abzeichen, die vor dem Namen erscheinen – in dieser Reihenfolge der Vorrang (nur eins wird gezeigt). */
-	public static final String[] SHOWN = {"pumpkinhunter2026", "halloween2026"};
+	/**
+	 * Abzeichen, die vor dem Namen erscheinen – in dieser Reihenfolge der Vorrang (nur eins wird gezeigt). Die
+	 * Halloween-2026-Abzeichen sind seit 0.30.2 aus.
+	 */
+	public static final String[] SHOWN = {};
 	static final long RETRY_MS = 10 * 60_000L;
 	/** Größtes Bild der API (Pixel ×8: höchstens 32×32 Sprite-Pixel). */
 	static final int MAX_SIDE = 256;
