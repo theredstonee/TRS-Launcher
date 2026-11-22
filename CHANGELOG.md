@@ -28,7 +28,13 @@ How to write an entry:
   "node --experimental-strip-types scripts/changelog.mjs set-contributors <version> <name1,name2>".
 -->
 
-## Unreleased
+## 0.37.0 – 2026-11-22 – Partner Up | Partner an Bord
+<!-- banner: accent=#36b4ff motif=/news/0.37.0/banner.png -->
+<!-- shots:
+/news/0.37.0/partner.png | Partner codes: support a partner and unlock its cosmetics | Partner-Codes: unterstütze einen Partner und schalte seine Kosmetik frei
+/news/0.37.0/partner-servers.png | Partner servers in the multiplayer list | Partner-Server in der Mehrspieler-Liste
+/news/0.37.0/effects.png | Effects with icons, right next to the minimap | Effekte mit Symbolen, direkt neben der Minimap
+-->
 
 ### English
 - **TRS Client: effects with icons instead of the vanilla icons.** The Potion Effects module now shows your effects with their icons and replaces the vanilla icons in the top right while it is on. They are drawn above the minimap and, as long as you haven't moved them, sit right next to it instead of underneath. Choose side by side or stacked and how the remaining time is shown: a bar that runs down, the time inside the icon, a ring that empties, or icon with name and time (always stacked). Optional: blink in the last 10 seconds, green/red border for good/bad effects, level (II, III …) and ∞ for endless effects, sort by remaining time, good before bad or the order you got them. Works on Fabric, Forge and NeoForge from Minecraft 1.14.4 and on Forge 1.7.10–1.13.2.
